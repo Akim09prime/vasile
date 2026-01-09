@@ -28,8 +28,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuth } from '@/hooks/use-auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 export default function AdminProjectsPage() {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -67,26 +65,6 @@ export default function AdminProjectsPage() {
     useEffect(() => {
         // We wait until the permission check is complete and we know the user is an admin.
         if (!isPermissionLoading && user) {
-            
-            // --- DIAGNOSTIC LOGGING ---
-            const checkAdminDoc = async () => {
-                const adminDocRef = doc(db, 'admins', user.uid);
-                const adminDoc = await getDoc(adminDocRef);
-                console.log('--- ADMIN PERMISSION DIAGNOSTIC (CLIENT) ---');
-                console.log('Authenticated UID:', user.uid);
-                console.log('Admin document path:', adminDocRef.path);
-                if (adminDoc.exists()) {
-                    console.log('Admin document exists:', true);
-                    console.log('Admin document `allowed` field:', adminDoc.data().allowed);
-                } else {
-                    console.log('Admin document exists:', false);
-                }
-                console.log('`useAuth` hook isAdmin state:', isAdmin);
-                console.log('------------------------------------------');
-            };
-            checkAdminDoc();
-            // --- END DIAGNOSTIC ---
-
             if (isAdmin) {
                 fetchProjects();
             } else {
@@ -141,8 +119,8 @@ export default function AdminProjectsPage() {
         }
         setIsFormOpen(false);
         fetchProjects();
-      } catch (error) {
-        toast({ variant: "destructive", title: "Error", description: "An error occurred while saving the project." });
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Error", description: error.message || "An error occurred while saving the project." });
       }
     };
     

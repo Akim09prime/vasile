@@ -1,6 +1,5 @@
 
 
-
 export type NavItem = {
   id: string;
   type: "internal" | "external";
@@ -104,10 +103,15 @@ export type Project = {
     coverMediaId?: string;
     media: ImagePlaceholder[]; // Changed from mediaIds
     image?: ImagePlaceholder;
-    rating?: number; // Optional project rating
 }
 
-export type ProjectData = Omit<Project, 'id' | 'createdAt' | 'publishedAt' | 'image' | 'rating'>;
+export type ProjectSummary = Pick<Project, 
+    'id' | 'name' | 'slug' | 'category' | 'categorySlug' | 'summary' |
+    'location' | 'isPublished' | 'image' | 'publishedAt' | 'completedAt' | 'createdAt'
+>;
+
+
+export type ProjectData = Omit<Project, 'id' | 'createdAt' | 'publishedAt' | 'image'>;
 
 export type Lead = {
     id: string;

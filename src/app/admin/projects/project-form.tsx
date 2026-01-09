@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import type { Project, ProjectData, ProjectType, ImagePlaceholder } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { getProjectTypes } from "@/lib/services/settings-service"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -102,10 +102,10 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
 
   const toggleMedia = (image: ImagePlaceholder) => {
     const currentMedia = form.getValues("media") || [];
-    const existingIndex = currentMedia.findIndex(m => m.id === image.id);
+    const isSelected = currentMedia.some(m => m.id === image.id);
+    
     let updatedMedia;
-
-    if (existingIndex > -1) {
+    if (isSelected) {
       updatedMedia = currentMedia.filter(m => m.id !== image.id);
     } else {
       updatedMedia = [...currentMedia, { ...image, rating: 0, isTop: false }];
@@ -113,21 +113,20 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
     form.setValue("media", updatedMedia, { shouldDirty: true });
   }
 
-  const updateMediaProperty = (imageId: string, property: 'rating' | 'isTop', value: any) => {
+ const updateMediaProperty = (imageId: string, property: 'rating' | 'isTop', value: any) => {
     const currentMedia = form.getValues("media") || [];
     const updatedMedia = currentMedia.map(item => {
         if (item.id === imageId) {
             const newItem = { ...item };
             if (property === 'rating') {
-                newItem.rating = value;
-                newItem.isTop = value === 5; // Also mark as top if rating is 5
+                const newRating = Number(value);
+                newItem.rating = newRating;
+                newItem.isTop = newRating === 5;
             } else if (property === 'isTop') {
-                newItem.isTop = value;
-                // If marking as top, set rating to 5. If unmarking, don't change rating unless it was 5.
-                if (value === true) {
+                const newIsTop = Boolean(value);
+                newItem.isTop = newIsTop;
+                if (newIsTop) {
                     newItem.rating = 5;
-                } else if (value === false && newItem.rating === 5) {
-                    newItem.rating = 0; // Or keep it, based on desired UX. Resetting is cleaner.
                 }
             }
             return newItem;
@@ -135,7 +134,7 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
         return item;
     });
     form.setValue("media", updatedMedia, { shouldDirty: true });
-  };
+};
   
   const setCoverId = (id: string) => {
     form.setValue("coverMediaId", id, { shouldDirty: true });

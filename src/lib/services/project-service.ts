@@ -1,9 +1,8 @@
 
-
 'use client';
 
 import { db } from '@/lib/firebase';
-import type { Project, ProjectData, ProjectType } from '@/lib/types';
+import type { Project, ProjectData, ProjectType, ProjectSummary } from '@/lib/types';
 import { PlaceHolderImages } from '../placeholder-images';
 import type { ImagePlaceholder } from '../placeholder-images';
 import { getSeedProjects } from './placeholder-db';
@@ -20,11 +19,25 @@ const slugify = (text: string) => text.toString().toLowerCase()
   .replace(/-+$/, '');
 
 
-// --- PUBLIC FACING FUNCTIONS (mostly for gallery page) ---
-export function getGalleryImages(): any[] {
-    // This is a placeholder function. In a real app, this would fetch from a 'media' collection or similar.
-    // For now, it aggregates images from published projects.
-    return []; // This needs a proper implementation if used.
+// --- PUBLIC FACING SERVER-SIDE FETCH ---
+export async function getProjectsFromApi(): Promise<ProjectSummary[]> {
+     // This function is intended to be called from Server Components.
+     // It fetches data from our own API route.
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/public/portfolio`, {
+        next: { revalidate: 300 } // Revalidate every 5 minutes
+    });
+
+    if (!res.ok) {
+        // This will be caught by the nearest error boundary
+        throw new Error(`Failed to fetch portfolio data. Status: ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (!data.ok) {
+        throw new Error(data.error || 'API returned an error');
+    }
+
+    return data.items;
 }
 
 
@@ -71,7 +84,6 @@ export async function getProjectsFromFirestore(params: { showUnpublished?: boole
                 coverMediaId: data.coverMediaId,
                 media: data.media || [],
                 image: coverImage || null,
-                rating: data.rating || 0,
             } as Project;
         });
         
@@ -130,7 +142,6 @@ export async function getProjectById(id: string): Promise<Project | null> {
             coverMediaId: data.coverMediaId,
             media: data.media || [],
             image: coverImage || null,
-            rating: data.rating || 0,
         };
     } catch (error: any) {
         if (error.code === 'permission-denied') {
@@ -207,7 +218,7 @@ export async function deleteProject(id: string): Promise<void> {
 export async function seedDatabase(): Promise<void> {
     const projects = getSeedProjects();
     for (const project of projects) {
-        const tempId = project.slug || slugify(project.name);
+        const tempId = slugify(project.name);
         const docRef = doc(db, 'projects', tempId);
         const docSnap = await getDoc(docRef);
 
@@ -260,7 +271,6 @@ export async function syncProjectSummary(projectId: string): Promise<void> {
           description: coverImage.description,
           imageHint: coverImage.imageHint,
       } : null,
-      rating: projectData.rating || 0,
     };
     
     await setDoc(summaryRef, summaryPayload, { merge: true });

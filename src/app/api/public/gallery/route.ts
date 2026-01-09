@@ -1,65 +1,75 @@
 
 import { NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebase-admin.server';
-import type { Project, GalleryImage } from '@/lib/types';
-import type { Query, QueryDocumentSnapshot } from 'firebase-admin/firestore';
+import { getServerDb } from '@/lib/firebase-server-client';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import type { ProjectSummary, GalleryImage, ImagePlaceholder } from '@/lib/types';
 
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const revalidate = 300; // Revalidate every 5 minutes
 
 export async function GET() {
-  const { db, info: adminInfo } = getAdminDb();
-  
-  if (!db) {
-    return NextResponse.json({ ok: false, error: 'Server configuration error. Admin SDK not initialized.', debug: { adminMode: adminInfo.mode, adminError: adminInfo.error } }, { status: 500 });
-  }
-  
-  try {
-    const projectsRef = db.collection('project_summaries');
-    const q = projectsRef.where('isPublished', '==', true);
+    const db = getServerDb();
     
-    const snapshot = await q.get();
+    try {
+        const q = query(
+            collection(db, 'project_summaries'),
+            where("isPublished", "==", true)
+        );
 
-    if (snapshot.empty) {
-        return NextResponse.json({ ok: true, items: [] });
-    }
+        const snapshot = await getDocs(q);
 
-    const allTopImages: GalleryImage[] = [];
+        if (snapshot.empty) {
+            return NextResponse.json({ ok: true, items: [] });
+        }
 
-    snapshot.docs.forEach((doc: QueryDocumentSnapshot) => {
-      const project = doc.data() as Project;
-      
-      if (project.media && Array.isArray(project.media)) {
-        project.media.forEach(image => {
-          // A top image is one that is explicitly marked as `isTop` or has a rating of 5.
-          const isTopImage = image.isTop === true || image.rating === 5;
+        const topRatedImages: GalleryImage[] = [];
 
-          if (isTopImage) {
-            allTopImages.push({
-              id: `${doc.id}-${image.id}`,
-              projectId: doc.id,
-              projectSlug: project.slug,
-              projectName: project.name,
-              category: project.category,
-              publishedAt: project.publishedAt,
-              image: image,
+        snapshot.docs.forEach(doc => {
+            const project = doc.data() as ProjectSummary;
+            const media = Array.isArray(project.media) ? project.media : [];
+
+            media.forEach((image: ImagePlaceholder) => {
+                // An image is "top" if it has isTop: true OR rating: 5
+                if (image.isTop === true || image.rating === 5) {
+                    topRatedImages.push({
+                        id: `${project.id}-${image.id}`,
+                        projectId: project.id,
+                        projectSlug: project.slug,
+                        projectName: project.name,
+                        category: project.category,
+                        publishedAt: project.publishedAt,
+                        image: {
+                            id: image.id,
+                            imageUrl: image.imageUrl,
+                            description: image.description,
+                            imageHint: image.imageHint,
+                            rating: image.rating,
+                            isTop: image.isTop,
+                        }
+                    });
+                }
             });
-          }
         });
-      }
-    });
+        
+        // Sort images by project publication date, newest first
+        topRatedImages.sort((a, b) => {
+            const dateA = a.publishedAt ? new Date(a.publishedAt) : new Date(0);
+            const dateB = b.publishedAt ? new Date(b.publishedAt) : new Date(0);
+            return dateB.getTime() - dateA.getTime();
+        });
 
-    // Sort images by project publication date, descending (newest first)
-    allTopImages.sort((a, b) => {
-        const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
-        const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
-        return dateB - dateA;
-    });
-    
-    return NextResponse.json({ ok: true, items: allTopImages });
 
-  } catch (error: any) {
-    console.error(`[API /public/gallery] Error during fetch:`, { code: error.code, message: error.message });
-    return NextResponse.json({ ok: false, error: error.message, code: error.code, debug: { adminMode: adminInfo.mode } }, { status: 500 });
-  }
+        return NextResponse.json({ ok: true, items: topRatedImages });
+
+    } catch (error: any) {
+        console.error("[API/public/gallery] Firestore Error:", {
+            message: error.message,
+            code: error.code,
+        });
+
+        return NextResponse.json(
+            { ok: false, error: `Failed to fetch gallery: ${error.message}`, code: error.code },
+            { status: 500 }
+        );
+    }
 }

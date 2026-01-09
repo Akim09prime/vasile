@@ -2,9 +2,9 @@
 // It is intentionally separate from project-service.ts to avoid 'use client' conflicts.
 import 'server-only';
 
-import type { Project, ProjectSummary } from '@/lib/types';
+import type { Project, ProjectSummary, GalleryImage } from '@/lib/types';
 import { getServerDb } from '@/lib/firebase-server-client';
-import { collection, query, where, orderBy, getDocs, limit, collectionGroup } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
 import { PlaceHolderImages } from '../placeholder-images';
 
 /**
@@ -31,7 +31,7 @@ function mapProjectToSummary(projectDoc: Project): ProjectSummary {
 /**
  * Sorts an array of projects by completion date, with fallbacks.
  */
-function sortProjectsByDate(projects: ProjectSummary[]): ProjectSummary[] {
+function sortProjectsByDate(projects: (ProjectSummary | Project)[]): any[] {
     return projects.sort((a, b) => {
         const dateA = new Date(a.completedAt || a.publishedAt || a.createdAt || 0).getTime();
         const dateB = new Date(b.completedAt || b.publishedAt || b.createdAt || 0).getTime();
@@ -51,12 +51,10 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
     // --- Primary Source: project_summaries ---
     try {
         console.log("[getPublicProjects] Attempting to fetch from source: project_summaries");
-        // FIX: Use collection() for a root collection, not collectionGroup()
         const summariesRef = collection(db, 'project_summaries');
         const q = query(
             summariesRef, 
             where("isPublished", "==", true),
-            orderBy("completedAt", "desc"),
             limit(limitCount)
         );
         const snapshot = await getDocs(q);
@@ -128,7 +126,7 @@ export async function getProjectsFromApi(): Promise<ProjectSummary[]> {
     const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/public/portfolio`;
 
     try {
-        const res = await fetch(apiUrl, { cache: 'no-store' });
+        const res = await fetch(apiUrl, { next: { revalidate: 300 } });
 
         if (!res.ok) {
             const errorBody = await res.text();
@@ -147,5 +145,56 @@ export async function getProjectsFromApi(): Promise<ProjectSummary[]> {
         console.error('[getProjectsFromApi] An error occurred during fetch:', error);
         // Re-throwing the error to be caught by the nearest error boundary.
         throw error;
+    }
+}
+
+/**
+ * Fetches all images marked as 'isTop' from all published projects.
+ * @returns A promise that resolves to an array of gallery images.
+ */
+export async function getGalleryImages(): Promise<GalleryImage[]> {
+    const db = getServerDb();
+    const allGalleryImages: GalleryImage[] = [];
+
+    try {
+        console.log("[getGalleryImages] Attempting to fetch from source: projects");
+        const projectsRef = collection(db, 'projects');
+        const q = query(
+            projectsRef,
+            where("isPublished", "==", true)
+        );
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            console.log("[getGalleryImages] No published projects found.");
+            return [];
+        }
+
+        snapshot.forEach(doc => {
+            const projectData = doc.data() as Project;
+            if (projectData.media && Array.isArray(projectData.media)) {
+                projectData.media.forEach(image => {
+                    if (image.isTop) {
+                        allGalleryImages.push({
+                            id: `${doc.id}-${image.id}`,
+                            projectId: doc.id,
+                            projectSlug: projectData.slug,
+                            projectName: projectData.name,
+                            category: projectData.category,
+                            image: image,
+                            publishedAt: projectData.publishedAt,
+                        });
+                    }
+                });
+            }
+        });
+        
+        console.log(`[getGalleryImages] Found ${allGalleryImages.length} top-rated images.`);
+        // Sort images by project date
+        return sortProjectsByDate(allGalleryImages);
+
+    } catch (error: any) {
+        console.error('[getGalleryImages] FATAL: Query on "projects" collection failed.', error);
+        throw new Error(`Failed to fetch gallery images from Firestore. Details: ${error.message}`);
     }
 }

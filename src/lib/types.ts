@@ -1,4 +1,6 @@
+import { type Locale } from './i18n-config';
 
+export type { Locale };
 
 export type NavItem = {
   id: string;
@@ -158,6 +160,6 @@ export type GalleryImage = {
     category: string;
     image: ImagePlaceholder;
     publishedAt?: string;
+    createdAt?: string;
+    completedAt?: string;
 }
-
-    

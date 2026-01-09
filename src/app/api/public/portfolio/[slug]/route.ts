@@ -1,16 +1,14 @@
+
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin.server';
-import type { Project, ImagePlaceholder } from '@/lib/types';
+import type { Project } from '@/lib/types';
 import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { findImage } from '@/lib/services/page-service';
+
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function findImage(id?: string): ImagePlaceholder | undefined {
-    if (!id) return undefined;
-    return PlaceHolderImages.find(p => p.id === id);
-}
 
 export async function GET(request: Request, { params }: { params: { slug: string }}) {
   const { slug } = params;
@@ -25,42 +23,46 @@ export async function GET(request: Request, { params }: { params: { slug: string
   try {
     const summariesRef = db.collection('project_summaries');
 
-    let docSnap: QueryDocumentSnapshot | null = null;
-
     // Query by slug first
-    const slugQuery = await summariesRef.where('slug', '==', slug).where('isPublished', '==', true).limit(1).get();
+    let snapshot = await summariesRef.where('slug', '==', slug).where('isPublished', '==', true).limit(1).get();
     
-    if (!slugQuery.empty) {
-      docSnap = slugQuery.docs[0];
-    } else {
-      // If not found by slug, try to get by ID as a fallback
+    let doc: QueryDocumentSnapshot | undefined = snapshot.docs[0];
+
+    // If not found by slug, try to get by ID as a fallback
+    if (!doc) {
       console.log(`[API /public/portfolio/detail] Slug '${slug}' not found. Trying as ID.`);
       const docById = await summariesRef.doc(slug).get();
       if (docById.exists && docById.data()?.isPublished) {
-        docSnap = docById as QueryDocumentSnapshot;
+        // We have to cast because get() returns DocumentSnapshot without the methods of QueryDocumentSnapshot
+        doc = docById as QueryDocumentSnapshot;
       }
     }
 
-    if (!docSnap || !docSnap.exists) {
+    if (!doc) {
       return NextResponse.json({ ok: false, error: 'Not Found' }, { status: 404 });
     }
 
-    const data = docSnap.data();
+    const data = doc.data();
     if (!data) {
        return NextResponse.json({ ok: false, error: 'Not Found' }, { status: 404 });
     }
+    
+    // --- Data Normalization ---
+    const mediaIds = data.mediaIds || [];
+    const resolvedMedia = mediaIds.map((id: string) => findImage(id)).filter(Boolean);
+    const coverMedia = data.image || findImage(data.coverMediaId);
 
-    const mediaIds: string[] = data.mediaIds || [];
-    const resolvedMedia = mediaIds.map(findImage).filter((i): i is ImagePlaceholder => !!i);
 
     const item: Project = {
         ...data,
-        id: docSnap.id,
+        id: doc.id,
         createdAt: data.createdAt?.toDate?.().toISOString() || new Date().toISOString(),
         publishedAt: data.publishedAt?.toDate?.().toISOString() || new Date().toISOString(),
-        // The 'image' field (cover) should already be on the summary document.
-        // We add the resolved 'media' array for the gallery.
+        // Keep original fields for backward compatibility
+        mediaIds: mediaIds,
+        // Add normalized fields for the UI
         media: resolvedMedia,
+        image: coverMedia,
     } as Project;
     
     return NextResponse.json({ ok: true, item });
@@ -76,3 +78,4 @@ export async function GET(request: Request, { params }: { params: { slug: string
     return NextResponse.json({ ok: false, error: 'Internal Server Error', debug: debugInfo }, { status: 500 });
   }
 }
+

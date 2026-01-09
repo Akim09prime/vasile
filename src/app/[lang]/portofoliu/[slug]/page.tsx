@@ -9,9 +9,17 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Calendar, MapPin, Tag, Terminal, X, ChevronLeft, ChevronRight, Loader } from "lucide-react";
 import Link from "next/link";
-import type { Project } from "@/lib/types";
+import type { Project, ImagePlaceholder } from "@/lib/types";
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel"
 
 // This function now runs on the client.
 async function getProjectFromApi(slug: string): Promise<{ project: Project | null; error?: any }> {

@@ -19,28 +19,6 @@ const slugify = (text: string) => text.toString().toLowerCase()
   .replace(/-+$/, '');
 
 
-// --- PUBLIC FACING SERVER-SIDE FETCH ---
-export async function getProjectsFromApi(): Promise<ProjectSummary[]> {
-     // This function is intended to be called from Server Components.
-     // It fetches data from our own API route.
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/public/portfolio`, {
-        next: { revalidate: 300 } // Revalidate every 5 minutes
-    });
-
-    if (!res.ok) {
-        // This will be caught by the nearest error boundary
-        throw new Error(`Failed to fetch portfolio data. Status: ${res.status}`);
-    }
-
-    const data = await res.json();
-    if (!data.ok) {
-        throw new Error(data.error || 'API returned an error');
-    }
-
-    return data.items;
-}
-
-
 // --- CLIENT-SIDE FUNCTIONS (for Admin Panel) ---
 
 /**

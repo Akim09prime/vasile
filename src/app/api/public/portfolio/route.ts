@@ -1,76 +1,46 @@
-
-import 'server-only';
-
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin.server';
-import type { DocumentData } from 'firebase-admin/firestore';
+import type { Project } from '@/lib/types';
+import type { Query, QueryDocumentSnapshot } from 'firebase-admin/firestore';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import type { ImagePlaceholder } from '@/lib/placeholder-images';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const COLLECTION_NAME = 'project_summaries';
-
-export async function GET(request: Request) {
+export async function GET() {
   const { db, info: adminInfo } = getAdminDb();
   
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[API /public/portfolio] mode=${adminInfo.mode}`);
-  }
+  console.log(`[API /public/portfolio] mode=${adminInfo.mode}`);
 
   if (!db) {
-    const errorPayload = {
-      ok: false,
-      error: 'Server configuration error. Admin SDK not initialized.',
-      ...(process.env.NODE_ENV === 'development' && {
-        debug: {
-          adminMode: adminInfo.mode,
-          adminError: adminInfo.error || 'No specific error message.',
-        },
-      }),
-    };
-    return NextResponse.json(errorPayload, { status: 500 });
+    return NextResponse.json({ ok: false, error: 'Server configuration error. Admin SDK not initialized.', debug: { adminMode: adminInfo.mode, adminError: adminInfo.error } }, { status: 500 });
   }
-
+  
   try {
-    const query = db.collection(COLLECTION_NAME)
-      .where('isPublished', '==', true)
-      .orderBy('publishedAt', 'desc')
-      .limit(100);
-      
-    const snapshot = await query.get();
+    const summariesRef = db.collection('project_summaries');
+    let q: Query = summariesRef.where('isPublished', '==', true);
+    q = q.orderBy('publishedAt', 'desc').limit(50);
+    
+    const snapshot = await q.get();
 
-    if (snapshot.empty) {
-      return NextResponse.json({ ok: true, items: [] });
-    }
-
-    const items: DocumentData[] = [];
-    snapshot.forEach(doc => {
+    const items: Project[] = snapshot.docs.map((doc: QueryDocumentSnapshot) => {
       const data = doc.data();
-      items.push({
-        id: doc.id,
-        ...data,
-        // Ensure timestamps are serializable
-        publishedAt: data.publishedAt?.toDate ? data.publishedAt.toDate().toISOString() : null,
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
-        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
-      });
-    });
+      const media = (data.mediaIds || []).map((id: string) => PlaceHolderImages.find(p => p.id === id)).filter((i): i is ImagePlaceholder => !!i);
 
+      return {
+        ...data,
+        id: doc.id,
+        media: media,
+        createdAt: data.createdAt?.toDate?.().toISOString() || new Date().toISOString(),
+        publishedAt: data.publishedAt?.toDate?.().toISOString() || new Date().toISOString(),
+      } as Project;
+    });
+    
     return NextResponse.json({ ok: true, items });
 
   } catch (error: any) {
-    console.error(`[API /public/portfolio] Firestore query failed:`, error);
-    const errorPayload = {
-      ok: false,
-      error: 'Failed to fetch portfolio data.',
-      ...(process.env.NODE_ENV === 'development' && {
-        debug: {
-          adminMode: adminInfo.mode,
-          errorMessage: error.message,
-          errorCode: error.code,
-        },
-      }),
-    };
-    return NextResponse.json(errorPayload, { status: 500 });
+    console.error(`[API /public/portfolio] Error during fetch:`, { code: error.code, message: error.message });
+    return NextResponse.json({ ok: false, error: error.message, code: error.code, debug: { adminMode: adminInfo.mode } }, { status: 500 });
   }
 }

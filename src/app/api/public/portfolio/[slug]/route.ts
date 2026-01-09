@@ -1,14 +1,11 @@
-
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin.server';
-import type { Project } from '@/lib/types';
+import type { Project, ImagePlaceholder } from '@/lib/types';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
-import { findImage } from '@/lib/services/page-service';
-
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
 
 export async function GET(request: Request, { params }: { params: { slug: string }}) {
   const { slug } = params;
@@ -21,19 +18,16 @@ export async function GET(request: Request, { params }: { params: { slug: string
   }
   
   try {
-    const summariesRef = db.collection('project_summaries');
+    const projectsRef = db.collection('projects');
 
-    // Query by slug first
-    let snapshot = await summariesRef.where('slug', '==', slug).where('isPublished', '==', true).limit(1).get();
+    let snapshot = await projectsRef.where('slug', '==', slug).where('isPublished', '==', true).limit(1).get();
     
     let doc: QueryDocumentSnapshot | undefined = snapshot.docs[0];
 
-    // If not found by slug, try to get by ID as a fallback
     if (!doc) {
-      console.log(`[API /public/portfolio/detail] Slug '${slug}' not found. Trying as ID.`);
-      const docById = await summariesRef.doc(slug).get();
+      console.log(`[API /public/portfolio/detail] Slug '${slug}' not found in 'projects'. Trying as ID.`);
+      const docById = await projectsRef.doc(slug).get();
       if (docById.exists && docById.data()?.isPublished) {
-        // We have to cast because get() returns DocumentSnapshot without the methods of QueryDocumentSnapshot
         doc = docById as QueryDocumentSnapshot;
       }
     }
@@ -47,22 +41,16 @@ export async function GET(request: Request, { params }: { params: { slug: string
        return NextResponse.json({ ok: false, error: 'Not Found' }, { status: 404 });
     }
     
-    // --- Data Normalization ---
-    const mediaIds = data.mediaIds || [];
-    const resolvedMedia = mediaIds.map((id: string) => findImage(id)).filter(Boolean);
-    const coverMedia = data.image || findImage(data.coverMediaId);
-
+    const media = (data.mediaIds || []).map((id: string) => PlaceHolderImages.find(p => p.id === id)).filter((i): i is ImagePlaceholder => !!i);
+    const coverImage = PlaceHolderImages.find(p => p.id === data.coverMediaId);
 
     const item: Project = {
         ...data,
         id: doc.id,
+        image: coverImage || null,
+        media: media,
         createdAt: data.createdAt?.toDate?.().toISOString() || new Date().toISOString(),
         publishedAt: data.publishedAt?.toDate?.().toISOString() || new Date().toISOString(),
-        // Keep original fields for backward compatibility
-        mediaIds: mediaIds,
-        // Add normalized fields for the UI
-        media: resolvedMedia,
-        image: coverMedia,
     } as Project;
     
     return NextResponse.json({ ok: true, item });
@@ -78,4 +66,3 @@ export async function GET(request: Request, { params }: { params: { slug: string
     return NextResponse.json({ ok: false, error: 'Internal Server Error', debug: debugInfo }, { status: 500 });
   }
 }
-

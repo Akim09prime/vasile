@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { db } from '@/lib/firebase';
@@ -62,6 +63,7 @@ export async function getProjectsFromFirestore(params: { showUnpublished?: boole
                 summary: data.summary,
                 content: data.content,
                 location: data.location,
+                rating: data.rating,
                 isPublished: data.isPublished,
                 publishedAt: publishedAt,
                 createdAt: createdAt,
@@ -120,6 +122,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
             summary: data.summary,
             content: data.content,
             location: data.location,
+            rating: data.rating,
             isPublished: data.isPublished,
             publishedAt: data.publishedAt?.toDate?.().toISOString(),
             createdAt: data.createdAt.toDate().toISOString(),
@@ -149,6 +152,7 @@ export async function createProject(projectData: ProjectData): Promise<string> {
 
     const fullData = {
         ...projectData,
+        rating: projectData.rating || 0,
         slug: generatedSlug,
         categorySlug,
         createdAt: serverTimestamp(),
@@ -170,6 +174,7 @@ export async function updateProject(id: string, projectData: Partial<ProjectData
     const currentData = docSnap.data();
     const updatePayload: any = {
         ...projectData,
+        rating: projectData.rating ?? currentData.rating ?? 0,
         slug: projectData.name ? slugify(projectData.name) : currentData.slug,
         updatedAt: serverTimestamp(),
     };
@@ -229,6 +234,7 @@ export async function syncProjectSummary(projectId: string): Promise<void> {
       categorySlug: defaultProjectTypes.find(pt => pt.label_ro === projectData.category)?.slug || 'uncategorized',
       summary: projectData.summary,
       location: projectData.location,
+      rating: projectData.rating || 0,
       isPublished: projectData.isPublished,
       publishedAt: projectData.isPublished ? (projectSnap.data().publishedAt || serverTimestamp()) : null,
       createdAt: projectSnap.data().createdAt || serverTimestamp(),

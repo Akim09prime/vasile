@@ -23,7 +23,7 @@ import { getProjectTypes } from "@/lib/services/settings-service"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
-import { X, CheckCircle } from "lucide-react"
+import { X, CheckCircle, Star } from "lucide-react"
 
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters long."),
@@ -31,6 +31,7 @@ const formSchema = z.object({
   summary: z.string().optional(),
   content: z.string().optional(),
   location: z.string().optional(),
+  rating: z.coerce.number().min(0).max(5).default(0),
   coverMediaId: z.string().optional(),
   mediaIds: z.array(z.string()).optional(),
   isPublished: z.boolean().default(false),
@@ -63,6 +64,7 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
       summary: project?.summary || "",
       content: project?.content || "",
       location: project?.location || "",
+      rating: project?.rating || 0,
       coverMediaId: project?.coverMediaId || "",
       mediaIds: project?.mediaIds || [],
       isPublished: project?.isPublished || false,
@@ -98,41 +100,82 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         <ScrollArea className="h-[70vh] p-4">
             <div className="space-y-6">
-                <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Project Name</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Modern kitchen, oak" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Category</FormLabel>
-                        <Select onValueChange={handleCategoryChange} defaultValue={field.value}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Project Name</FormLabel>
                         <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
+                            <Input placeholder="Modern kitchen, oak" {...field} />
                         </FormControl>
-                        <SelectContent>
-                            {categories.map(category => (
-                            <SelectItem key={category.id} value={category.label_ro}>{category.label_ro}</SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Category</FormLabel>
+                            <Select onValueChange={handleCategoryChange} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {categories.map(category => (
+                                <SelectItem key={category.id} value={category.label_ro}>{category.label_ro}</SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Location</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Bucharest" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                     <FormField
+                        control={form.control}
+                        name="rating"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Rating</FormLabel>
+                            <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={String(field.value)}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a rating" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {[0, 1, 2, 3, 4, 5].map(rate => (
+                                         <SelectItem key={rate} value={String(rate)}>
+                                            <span className="flex items-center">{rate} <Star className="ml-1 h-4 w-4 text-yellow-400" fill="currentColor"/></span>
+                                         </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                </div>
                 <FormField
                 control={form.control}
                 name="summary"
@@ -159,20 +202,7 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
                     </FormItem>
                 )}
                 />
-                <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Bucharest" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-
+               
                 {/* Cover Media Picker */}
                 <div className="space-y-4 rounded-lg border p-4">
                     <FormLabel>Cover Image</FormLabel>

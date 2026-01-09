@@ -96,6 +96,7 @@ export type Project = {
     summary?: string;
     content?: string;
     location?: string;
+    rating?: number;
     isPublished: boolean;
     publishedAt?: string;
     createdAt: string;
@@ -144,6 +145,8 @@ export type ImagePlaceholder = {
 
 export type GalleryImage = {
     id: string;
+    projectId: string;
+    projectSlug?: string;
     category: string;
-    image?: ImagePlaceholder;
+    image: ImagePlaceholder;
 }

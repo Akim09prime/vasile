@@ -5,16 +5,22 @@ import * as React from 'react';
 import Image from 'next/image';
 import { getGalleryPageData } from '@/lib/services/page-service';
 import { PageHeader } from '@/components/layout/page-header';
-import type { GalleryImage, Project, ImagePlaceholder } from '@/lib/types';
+import type { GalleryImage } from '@/lib/types';
 import { Loader, AlertCircle, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { Locale } from '@/lib/i18n-config';
+
 
 export default function GalleryPage() {
     const { intro } = getGalleryPageData();
+    const params = useParams();
+    const lang = params.lang as Locale;
     const [images, setImages] = React.useState<GalleryImage[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
@@ -26,27 +32,14 @@ export default function GalleryPage() {
             setLoading(true);
             setError(null);
             try {
-                const response = await fetch('/api/public/portfolio', { cache: 'no-store' });
+                // Use the new dedicated API endpoint
+                const response = await fetch('/api/public/gallery', { cache: 'no-store' });
                 if (!response.ok) throw new Error(`API error: ${response.statusText}`);
                 
                 const data = await response.json();
-                if (!data.ok) throw new Error(data.error || 'Failed to fetch projects');
+                if (!data.ok) throw new Error(data.error || 'Failed to fetch gallery images');
 
-                const projects: Project[] = data.items;
-                
-                const topRatedImages: GalleryImage[] = projects.flatMap(project =>
-                    (project.media || [])
-                        .filter(img => img.rating === 5)
-                        .map(img => ({
-                            id: `${project.id}-${img.id}`,
-                            projectId: project.id,
-                            projectSlug: project.slug,
-                            category: project.category || 'Uncategorized',
-                            image: img,
-                        }))
-                );
-                
-                setImages(topRatedImages);
+                setImages(data.items);
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -85,7 +78,7 @@ export default function GalleryPage() {
                 ) : images.length === 0 ? (
                     <div className="text-center py-16">
                         <h3 className="text-xl font-semibold">Nicio imagine de top</h3>
-                        <p className="text-muted-foreground mt-2">Momentan nu există imagini cotate cu 5 stele. Reveniți mai târziu.</p>
+                        <p className="text-muted-foreground mt-2">Momentan nu există imagini marcate ca "Top". Reveniți mai târziu.</p>
                     </div>
                 ) : (
                     <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
@@ -108,7 +101,10 @@ export default function GalleryPage() {
                                     data-ai-hint={item.image.imageHint}
                                 />
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                                   <p className="text-white text-sm font-medium">{item.image?.description}</p>
+                                   <div className="text-white">
+                                        <p className="text-sm font-medium">{item.projectName}</p>
+                                        <p className="text-xs opacity-80">{item.image.description}</p>
+                                   </div>
                                 </div>
                             </motion.div>
                         ))}
@@ -132,6 +128,15 @@ export default function GalleryPage() {
                                     fill 
                                     className="object-contain rounded-lg"
                                 />
+                                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent text-white">
+                                    <p className="font-bold">{selectedImage.projectName}</p>
+                                    <p className="text-sm opacity-90">{selectedImage.image.description}</p>
+                                    <Button asChild variant="secondary" size="sm" className="mt-2">
+                                        <Link href={`/${lang}/portofoliu/${selectedImage.projectSlug || selectedImage.projectId}`}>
+                                            Vezi Proiectul
+                                        </Link>
+                                    </Button>
+                                </div>
                              </motion.div>
                             <DialogClose asChild>
                                 <Button size="icon" variant="secondary" className="absolute -top-4 -right-4 rounded-full h-10 w-10 z-50">

@@ -246,6 +246,7 @@ export async function syncProjectSummary(projectId: string): Promise<void> {
           description: coverImage.description,
           imageHint: coverImage.imageHint,
           rating: coverImage.rating,
+          isTop: coverImage.isTop,
       } : null,
     };
     

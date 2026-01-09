@@ -27,6 +27,7 @@ import Image from "next/image"
 import { X, CheckCircle, Star } from "lucide-react"
 import { produce } from "immer"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 
 const imagePlaceholderSchema = z.object({
   id: z.string(),
@@ -34,6 +35,7 @@ const imagePlaceholderSchema = z.object({
   imageUrl: z.string(),
   imageHint: z.string(),
   rating: z.number().min(0).max(5).optional().default(0),
+  isTop: z.boolean().optional().default(false),
 });
 
 const formSchema = z.object({
@@ -101,8 +103,8 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
       // Remove it
       form.setValue("media", currentMedia.filter(m => m.id !== image.id));
     } else {
-      // Add it with default rating
-      form.setValue("media", [...currentMedia, { ...image, rating: 0 }]);
+      // Add it with default rating and isTop
+      form.setValue("media", [...currentMedia, { ...image, rating: 0, isTop: false }]);
     }
   }
   
@@ -115,6 +117,17 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
       });
       form.setValue("media", updatedMedia);
   }
+  
+  const toggleMediaIsTop = (imageId: string) => {
+      const updatedMedia = produce(form.getValues("media"), draft => {
+          const item = draft.find(m => m.id === imageId);
+          if (item) {
+              item.isTop = !item.isTop;
+          }
+      });
+      form.setValue("media", updatedMedia);
+  }
+
 
   const setCoverId = (id: string) => {
     form.setValue("coverMediaId", id);
@@ -253,14 +266,14 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
 
                 <div className="space-y-4 rounded-lg border p-4">
                     <FormLabel>Project Media Gallery</FormLabel>
-                    <FormDescription>Select images to include in the project gallery and set their ratings.</FormDescription>
+                    <FormDescription>Select images to include, rate them, and mark top images for the public gallery.</FormDescription>
                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {PlaceHolderImages.map(image => {
-                            const isSelected = selectedMedia.some(m => m.id === image.id);
                             const selectedImage = selectedMedia.find(m => m.id === image.id);
+                            const isSelected = !!selectedImage;
                             return (
-                                <div key={image.id} className={cn("relative group cursor-pointer border-2 rounded-lg overflow-hidden", isSelected ? "border-primary" : "border-transparent")}>
-                                    <div onClick={() => toggleMedia(image)}>
+                                <div key={image.id} className={cn("relative group border-2 rounded-lg overflow-hidden", isSelected ? "border-primary" : "border-transparent")}>
+                                    <div className="relative cursor-pointer" onClick={() => toggleMedia(image)}>
                                         <Image 
                                             src={image.imageUrl} 
                                             alt={image.description} 
@@ -273,22 +286,30 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
                                                 <CheckCircle className="h-8 w-8 text-white" />
                                             </div>
                                         )}
+                                        {selectedImage?.isTop && (
+                                            <Badge variant="default" className="absolute top-1 right-1">TOP</Badge>
+                                        )}
                                     </div>
                                     {isSelected && (
-                                        <div className="p-2 bg-secondary">
-                                            <Label className="text-xs mb-1 block">Rating</Label>
-                                            <Select onValueChange={(value) => updateMediaRating(image.id, parseInt(value))} defaultValue={String(selectedImage?.rating || 0)}>
-                                                <SelectTrigger className="h-8 text-xs">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {[0, 1, 2, 3, 4, 5].map(rate => (
-                                                         <SelectItem key={rate} value={String(rate)}>
-                                                            <span className="flex items-center gap-1">{rate} <Star className="h-3 w-3 text-yellow-400" fill="currentColor"/></span>
-                                                         </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                        <div className="p-2 bg-secondary/50 space-y-2">
+                                            <div className="flex flex-col gap-1">
+                                                <Label className="text-xs">Rating</Label>
+                                                <Select onValueChange={(value) => updateMediaRating(image.id, parseInt(value))} defaultValue={String(selectedImage?.rating || 0)}>
+                                                    <SelectTrigger className="h-8 text-xs">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {[0, 1, 2, 3, 4, 5].map(rate => (
+                                                             <SelectItem key={rate} value={String(rate)}>
+                                                                <span className="flex items-center gap-1">{rate} <Star className="h-3 w-3 text-yellow-400" fill="currentColor"/></span>
+                                                             </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <Button size="sm" variant={selectedImage.isTop ? 'secondary' : 'outline'} className="w-full h-8 text-xs" onClick={() => toggleMediaIsTop(image.id)}>
+                                                <Star className="mr-1 h-3 w-3" /> {selectedImage.isTop ? 'Unmark Top' : 'Mark as Top'}
+                                            </Button>
                                         </div>
                                     )}
                                 </div>

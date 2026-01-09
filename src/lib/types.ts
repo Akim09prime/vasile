@@ -140,12 +140,15 @@ export type ImagePlaceholder = {
   imageUrl: string;
   imageHint: string;
   rating?: number; // Added rating per image
+  isTop?: boolean; // Added for gallery curation
 };
 
 export type GalleryImage = {
     id: string;
     projectId: string;
     projectSlug?: string;
+    projectName: string;
     category: string;
     image: ImagePlaceholder;
+    publishedAt?: string;
 }

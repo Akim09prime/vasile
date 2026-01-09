@@ -1,23 +1,17 @@
 
 import * as React from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
 import { getPortfolioPageData } from '@/lib/services/page-service';
 import { getProjectTypes } from '@/lib/services/settings-service';
 import { PageHeader } from '@/components/layout/page-header';
-import { Button } from '@/components/ui/button';
 import { Locale } from '@/lib/i18n-config';
-import { ArrowRight, Loader, Calendar, MapPin, Tag, Terminal, ChevronsRight } from 'lucide-react';
-import type { Project, ProjectType } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { Terminal } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { motion } from 'framer-motion';
-
-import { ProjectTimeline } from './project-timeline';
 import { getProjectsFromApi } from '@/lib/services/project-service';
+import { ProjectTimeline } from './project-timeline';
 
-async function loadPortfolioData(lang: Locale) {
+async function loadPortfolioData() {
     try {
+        // Fetch both categories and projects in parallel.
         const [categories, projects] = await Promise.all([
             getProjectTypes(),
             getProjectsFromApi(),
@@ -30,11 +24,10 @@ async function loadPortfolioData(lang: Locale) {
     }
 }
 
-
 export default async function PortfolioPage({ params }: { params: { lang: Locale }}) {
     const { lang } = params;
     const portfolioPageData = getPortfolioPageData();
-    const { categories, projects, error } = await loadPortfolioData(lang);
+    const { categories, projects, error } = await loadPortfolioData();
 
     if (!portfolioPageData) {
         return <p>Eroare: Nu s-au putut încărca datele paginii.</p>;
@@ -57,7 +50,7 @@ export default async function PortfolioPage({ params }: { params: { lang: Locale
                         <AlertTitle>Eroare la încărcarea Portofoliului</AlertTitle>
                         <AlertDescription>
                             <p className="font-mono text-xs mb-4 break-all whitespace-pre-wrap">{error}</p>
-                            <p className="text-sm mt-2">Acest lucru se poate întâmpla dacă indexul compozit necesar în Firestore nu a fost creat.</p>
+                            <p className="text-sm mt-2">Acest lucru se poate întâmpla dacă un index compozit necesar în Firestore nu a fost creat sau dacă API-ul nu poate fi accesat.</p>
                         </AlertDescription>
                     </Alert>
                 ) : (
@@ -71,3 +64,4 @@ export default async function PortfolioPage({ params }: { params: { lang: Locale
         </>
     );
 }
+

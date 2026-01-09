@@ -1,4 +1,3 @@
-
 // This file is for server-side API fetching functions that can be used in Server Components.
 // It is intentionally separate from project-service.ts to avoid 'use client' conflicts.
 import 'server-only';
@@ -18,14 +17,11 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
         const db = getServerDb();
         const summariesRef = collection(db, 'project_summaries');
         
-        // This query requires a composite index in Firestore:
-        // Collection: project_summaries, Fields: [isPublished: Ascending, completedAt: Descending, publishedAt: Descending, createdAt: Descending]
+        // This query requires a composite index: (isPublished: Asc, completedAt: Desc)
         const q = query(
             summariesRef, 
             where("isPublished", "==", true),
-            orderBy("completedAt", "desc"),
-            orderBy("publishedAt", "desc"),
-            orderBy("createdAt", "desc")
+            orderBy("completedAt", "desc")
         );
 
         const snapshot = await getDocs(q);
@@ -34,7 +30,7 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
             return [];
         }
 
-        return snapshot.docs.map(doc => {
+        const projects = snapshot.docs.map(doc => {
             const data = doc.data();
             return {
                 id: doc.id,
@@ -51,6 +47,15 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
                 image: data.image || null,
             } as ProjectSummary;
         });
+
+        // Sort in code to handle fallbacks gracefully without complex indexes
+        projects.sort((a, b) => {
+            const dateA = new Date(a.completedAt || a.publishedAt || a.createdAt || 0).getTime();
+            const dateB = new Date(b.completedAt || b.publishedAt || b.createdAt || 0).getTime();
+            return dateB - dateA;
+        });
+
+        return projects;
 
     } catch (error: any) {
         console.error('[getPublicProjects] Firestore query failed:', error);
@@ -97,4 +102,3 @@ export async function getProjectsFromApi(): Promise<ProjectSummary[]> {
         throw error;
     }
 }
-

@@ -194,7 +194,7 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
                         name="rating"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Project Rating</FormLabel>
+                            <FormLabel>Project Rating (Overall)</FormLabel>
                             <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={String(field.value)}>
                                 <FormControl>
                                 <SelectTrigger>
@@ -293,7 +293,7 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
                                     {isSelected && (
                                         <div className="p-2 bg-secondary/50 space-y-2">
                                             <div className="flex flex-col gap-1">
-                                                <Label className="text-xs">Rating</Label>
+                                                <Label className="text-xs">Image Rating</Label>
                                                 <Select onValueChange={(value) => updateMediaRating(image.id, parseInt(value))} defaultValue={String(selectedImage?.rating || 0)}>
                                                     <SelectTrigger className="h-8 text-xs">
                                                         <SelectValue />

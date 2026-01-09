@@ -1,4 +1,5 @@
 
+
 export type NavItem = {
   id: string;
   type: "internal" | "external";
@@ -139,8 +140,8 @@ export type ImagePlaceholder = {
   description: string;
   imageUrl: string;
   imageHint: string;
-  rating?: number; // Added rating per image
-  isTop?: boolean; // Added for gallery curation
+  rating?: number;
+  isTop?: boolean;
 };
 
 export type GalleryImage = {

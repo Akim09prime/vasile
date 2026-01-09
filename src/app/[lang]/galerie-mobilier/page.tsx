@@ -94,7 +94,7 @@ export default function GalleryPage() {
                             >
                                 <Image
                                     src={item.image.imageUrl}
-                                    alt={item.image.description}
+                                    alt={item.image.description || ''}
                                     width={500}
                                     height={500}
                                     className="w-full h-auto object-cover"
@@ -124,7 +124,7 @@ export default function GalleryPage() {
                             >
                                 <Image 
                                     src={selectedImage.image.imageUrl} 
-                                    alt={selectedImage.image.description} 
+                                    alt={selectedImage.image.description || ''} 
                                     fill 
                                     className="object-contain rounded-lg"
                                 />

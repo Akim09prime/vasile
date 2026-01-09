@@ -1,3 +1,4 @@
+
 import { getGalleryPageData } from '@/lib/services/page-service';
 import { PageHeader } from '@/components/layout/page-header';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

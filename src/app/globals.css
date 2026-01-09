@@ -4,14 +4,14 @@
 
 @layer base {
   :root {
-    --bg: 210 14% 5%; /* #0B0D10 */
-    --bg-2: 216 27% 12%; /* #161C28 */
-    --text: 38 13% 95%; /* #F2F2EF */
-    --muted: 38 13% 95% / 0.7;
+    --bg: 210 14% 5%; /* #07090B */
+    --bg-2: 216 27% 12%; /* #0C1014 */
+    --text: 38 13% 95%; /* #F2EFE8 */
+    --muted-fg: 38 13% 95% / 0.7; /* rgba(242,239,232,.7) */
     --border: 0 0% 100% / 0.08;
     --gold: 43 56% 54%; /* #C9A24A */
-    --gold-hover: 43 56% 60%; /* Lighter gold for hover */
-    --gold-glow: 43 56% 54% / 0.2;
+    --gold-hover: 43 56% 60%; /* #D8B56A */
+    --gold-glow: 43 56% 54% / 0.2; /* rgba(201,164,91,.20) */
 
     --background: var(--bg);
     --foreground: var(--text);
@@ -23,8 +23,8 @@
     --primary-foreground: 216 21% 5%;
     --secondary: var(--bg-2);
     --secondary-foreground: var(--text);
-    --muted: var(--muted);
-    --muted-foreground: var(--muted);
+    --muted: var(--muted-fg);
+    --muted-foreground: var(--muted-fg);
     --accent: var(--gold);
     --accent-foreground: var(--text);
     --destructive: 0 63% 31%;
@@ -49,7 +49,7 @@
     --bg: 210 14% 5%;
     --bg-2: 216 27% 12%;
     --text: 38 13% 95%;
-    --muted: 38 13% 95% / 0.7;
+    --muted-fg: 38 13% 95% / 0.7;
     --border: 0 0% 100% / 0.08;
     --gold: 43 56% 54%;
     --gold-hover: 43 56% 60%;
@@ -65,8 +65,8 @@
     --primary-foreground: 216 21% 5%;
     --secondary: var(--bg-2);
     --secondary-foreground: var(--text);
-    --muted: var(--muted);
-    --muted-foreground: var(--muted);
+    --muted: var(--muted-fg);
+    --muted-foreground: var(--muted-fg);
     --accent: var(--gold);
     --accent-foreground: var(--text);
     --destructive: 0 63% 31%;

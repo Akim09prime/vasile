@@ -22,6 +22,6 @@ export const staggerContainer = {
 };
 
 export const hoverLift = {
-  whileHover: { y: -3 },
+  whileHover: { y: -2 },
   transition: { duration: 0.2, ease: "easeInOut" },
 };

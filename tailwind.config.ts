@@ -9,6 +9,22 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        cinematic: {
+          bg: "#07090c",
+          surface: "#0c1016",
+          text: "#e9eef5",
+          muted: "#a8b3c2",
+          gold: "#c8a44d",
+          gold2: "#e2c77a",
+          border: "rgba(233,238,245,0.08)",
+        },
+      },
+      boxShadow: {
+        "cinematic-bloom": "0 0 0 1px rgba(233,238,245,0.06), 0 18px 60px rgba(0,0,0,0.55)",
+        "cinematic-lift": "0 0 0 1px rgba(233,238,245,0.10), 0 26px 80px rgba(0,0,0,0.65)",
+      },
+
       fontFamily: {
         body: ['var(--font-pt-sans)', 'sans-serif'],
         headline: ['var(--font-playfair-display)', 'serif'],

@@ -15,13 +15,13 @@ import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 const ptSans = PT_Sans({
   subsets: ['latin'],
   weight: ['400', '700'],
-  variable: '--font-pt-sans',
+  variable: '--font-body',
 })
 
 const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-playfair-display',
+  variable: '--font-heading',
 })
 
 
@@ -37,8 +37,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "black" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
+    { media: "(prefers-color-scheme: light)", color: "#F5F0E8" },
+    { media: "(prefers-color-scheme: dark)", color: "#07090C" },
   ],
 };
 
@@ -53,8 +53,8 @@ export default async function RootLayout({
   const { lang } = await params;
 
   return (
-    <html lang={lang} suppressHydrationWarning>
-      <body className={`${ptSans.variable} ${playfairDisplay.variable} font-body antialiased`} suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning className={`${playfairDisplay.variable} ${ptSans.variable}`}>
+      <body className={`antialiased`} suppressHydrationWarning>
         <AuthProvider>
             <ThemeProvider
               attribute="class"

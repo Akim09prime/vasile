@@ -9,25 +9,9 @@ export default {
   ],
   theme: {
     extend: {
-      colors: {
-        cinematic: {
-          bg: "#07090c",
-          surface: "#0c1016",
-          text: "#e9eef5",
-          muted: "#a8b3c2",
-          gold: "#c8a44d",
-          gold2: "#e2c77a",
-          border: "rgba(233,238,245,0.08)",
-        },
-      },
-      boxShadow: {
-        "cinematic-bloom": "0 0 0 1px rgba(233,238,245,0.06), 0 18px 60px rgba(0,0,0,0.55)",
-        "cinematic-lift": "0 0 0 1px rgba(233,238,245,0.10), 0 26px 80px rgba(0,0,0,0.65)",
-      },
-
       fontFamily: {
-        body: ['var(--font-pt-sans)', 'sans-serif'],
-        headline: ['var(--font-playfair-display)', 'serif'],
+        body: ['var(--font-body)', 'sans-serif'],
+        heading: ['var(--font-heading)', 'serif'],
         code: ['monospace'],
       },
       colors: {
@@ -64,28 +48,19 @@ export default {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
-        gold: {
-            DEFAULT: 'hsl(var(--gold))',
-            hover: 'hsl(var(--gold-hover))',
-            glow: 'hsl(var(--gold-glow))',
-        },
-        chart: {
-          '1': 'hsl(var(--chart-1))',
-          '2': 'hsl(var(--chart-2))',
-          '3': 'hsl(var(--chart-3))',
-          '4': 'hsl(var(--chart-4))',
-          '5': 'hsl(var(--chart-5))',
-        },
-        sidebar: {
-          DEFAULT: 'hsl(var(--sidebar-background))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          primary: 'hsl(var(--sidebar-primary))',
-          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-          accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-          border: 'hsl(var(--sidebar-border))',
-          ring: 'hsl(var(--sidebar-ring))',
-        },
+        
+        // Cinematic Design Tokens (for direct use if needed)
+        'cinematic-bg': 'hsl(var(--background))',
+        'surface': 'hsl(var(--card))',
+        'text': 'hsl(var(--foreground))',
+        'cinematic-muted': 'hsl(var(--muted))',
+        'gold': 'hsl(var(--primary))',
+        'gold-highlight': 'hsl(var(--accent))',
+        'cinematic-border': 'hsl(var(--border))',
+      },
+      boxShadow: {
+        'cinematic-bloom': '0 0 0 1px rgba(233,238,245,0.06), 0 18px 60px rgba(0,0,0,0.55)',
+        'cinematic-lift': '0 0 0 1px rgba(233,238,245,0.10), 0 26px 80px rgba(0,0,0,0.65)',
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -114,6 +89,16 @@ export default {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
       },
+       sidebar: {
+          DEFAULT: 'hsl(var(--sidebar-background))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+          primary: 'hsl(var(--sidebar-primary))',
+          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+          accent: 'hsl(var(--sidebar-accent))',
+          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+          border: 'hsl(var(--sidebar-border))',
+          ring: 'hsl(var(--sidebar-ring))',
+        },
     },
   },
   plugins: [require('tailwindcss-animate')],

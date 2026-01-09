@@ -93,12 +93,12 @@ function Gallery({ project }: { project: Project }) {
         <section className="py-14 md:py-20">
             <div className="container-max px-6">
                 <div className="max-w-3xl mx-auto text-center mb-10">
-                    <h2 className="h2-headline text-cinematic-text">Galerie Proiect</h2>
-                    <p className="mt-3 text-cinematic-muted max-prose">Detalii, texturi și finisaje — prezentate cinematic.</p>
+                    <h2 className="h2-headline text-text">Galerie Proiect</h2>
+                    <p className="mt-3 text-muted max-prose">Detalii, texturi și finisaje — prezentate cinematic.</p>
                 </div>
 
                 <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start">
-                    <div className="relative rounded-2xl overflow-hidden border border-cinematic-border shadow-cinematic-bloom bg-cinematic-surface">
+                    <div className="relative rounded-2xl overflow-hidden border border-cinematic-border shadow-cinematic-bloom bg-surface">
                         <button type="button" onClick={() => openLightbox(selected)} className="group block w-full text-left" aria-label="Deschide în lightbox">
                             <div className="relative aspect-[16/10]">
                                 <Image
@@ -112,8 +112,8 @@ function Gallery({ project }: { project: Project }) {
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-80 pointer-events-none" />
                             </div>
                             <div className="p-4 md:p-5">
-                                <p className="text-sm md:text-base text-cinematic-text/90">{currentMedia.description || "Click pentru vizualizare"}</p>
-                                <p className="mt-1 text-xs text-cinematic-muted">{selected + 1} / {media.length}</p>
+                                <p className="text-sm md:text-base text-text/90">{currentMedia.description || "Click pentru vizualizare"}</p>
+                                <p className="mt-1 text-xs text-muted">{selected + 1} / {media.length}</p>
                             </div>
                         </button>
 
@@ -129,8 +129,8 @@ function Gallery({ project }: { project: Project }) {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-cinematic-border bg-cinematic-surface shadow-cinematic-bloom p-4">
-                        <p className="text-sm text-cinematic-muted mb-3">Cadre</p>
+                    <div className="rounded-2xl border border-cinematic-border bg-surface shadow-cinematic-bloom p-4">
+                        <p className="text-sm text-muted mb-3">Cadre</p>
                         <div className="grid grid-cols-3 gap-3">
                             {media.slice(0, 12).map((m, idx) => {
                                 const active = idx === selected;
@@ -153,14 +153,14 @@ function Gallery({ project }: { project: Project }) {
                                 );
                             })}
                         </div>
-                        {media.length > 12 && <p className="mt-3 text-xs text-cinematic-muted">+ {media.length - 12} imagini (în lightbox)</p>}
+                        {media.length > 12 && <p className="mt-3 text-xs text-muted">+ {media.length - 12} imagini (în lightbox)</p>}
                     </div>
                 </div>
             </div>
 
             <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
                 <DialogContent className="max-w-6xl w-full p-0 bg-transparent border-0 shadow-none" onPointerDownOutside={closeLightbox}>
-                    <div className="relative w-full rounded-2xl overflow-hidden border border-cinematic-border shadow-cinematic-lift bg-cinematic-surface">
+                    <div className="relative w-full rounded-2xl overflow-hidden border border-cinematic-border shadow-cinematic-lift bg-surface">
                         <div className="relative aspect-[16/10]">
                             <Image src={media[selected].imageUrl} alt={media[selected].description || project.name || "Imagine proiect"} fill className="object-contain bg-black/30" sizes="100vw" />
                             <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-black/10" />
@@ -181,8 +181,8 @@ function Gallery({ project }: { project: Project }) {
                         </Button>
 
                         <div className="px-5 py-4">
-                            <p className="text-sm md:text-base text-cinematic-text/90">{media[selected].description || ""}</p>
-                            <p className="mt-1 text-xs text-cinematic-muted">{selected + 1} / {media.length} • ESC închide • ← → navighează</p>
+                            <p className="text-sm md:text-base text-text/90">{media[selected].description || ""}</p>
+                            <p className="mt-1 text-xs text-muted">{selected + 1} / {media.length} • ESC închide • ← → navighează</p>
                         </div>
                     </div>
                 </DialogContent>
@@ -327,5 +327,3 @@ export default function ProjectDetailsPage({ params }: { params: { slug: string,
         </>
     )
 }
-
-    

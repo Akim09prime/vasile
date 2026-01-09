@@ -52,7 +52,7 @@ export default async function Home({
                 <Button size="lg" asChild>
                 <Link href={`/${lang}${hero.cta.primary.href}`}>{dictionary.pages.home.hero.cta.primary}</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="bg-background/50 backdrop-blur-sm" asChild>
+                <Button size="lg" variant="secondary" asChild>
                 <Link href={`/${lang}${hero.cta.secondary.href}`}>{dictionary.pages.home.hero.cta.secondary} <ArrowRight /></Link>
                 </Button>
             </div>
@@ -74,7 +74,7 @@ export default async function Home({
                 <CardHeader className="items-center">
                     <div className="w-12 h-12 rounded-full flex items-center justify-center bg-primary/10 text-primary mb-4" dangerouslySetInnerHTML={{ __html: pillar.icon }}>
                     </div>
-                    <CardTitle className="font-headline text-xl">{pillar.title}</CardTitle>
+                    <CardTitle className="font-heading text-xl">{pillar.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-foreground/70">{pillar.description}</p>
@@ -89,7 +89,7 @@ export default async function Home({
         <section className="bg-secondary/50 section-padding">
             <div className="container-max">
                 <div className="text-center max-w-3xl mx-auto">
-                    <p className="font-headline text-primary text-lg">{process.kicker}</p>
+                    <p className="font-heading text-primary text-lg">{process.kicker}</p>
                     <h2 className="h2-headline mt-2">{process.title}</h2>
                     <p className="mt-4 text-lg text-foreground/70">
                         {process.description}
@@ -100,7 +100,7 @@ export default async function Home({
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
                         {process.steps.map((step, index) => (
                             <div key={step.name} className="flex items-start gap-4">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-card border flex items-center justify-center font-headline text-primary relative z-10">
+                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-card border flex items-center justify-center font-heading text-primary relative z-10">
                                     {index + 1}
                                 </div>
                                 <div>
@@ -131,7 +131,7 @@ export default async function Home({
                     }
                 </div>
                 <div>
-                    <p className="font-headline text-primary text-lg">{guarantees.kicker}</p>
+                    <p className="font-heading text-primary text-lg">{guarantees.kicker}</p>
                     <h2 className="h2-headline mt-2">{guarantees.title}</h2>
                     <p className="mt-4 text-lg text-foreground/70">
                         {guarantees.description}

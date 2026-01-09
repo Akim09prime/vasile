@@ -4,37 +4,69 @@
 
 @layer base {
   :root {
-    --bg: 210 14% 5%; /* #07090B */
-    --bg-2: 216 27% 12%; /* #0C1014 */
-    --text: 38 13% 95%; /* #F2EFE8 */
-    --muted-fg: 38 13% 95% / 0.7; /* rgba(242,239,232,.7) */
-    --border: 0 0% 100% / 0.08;
-    --gold: 43 56% 54%; /* #C9A24A */
-    --gold-hover: 43 56% 60%; /* #D8B56A */
-    --gold-glow: 43 56% 54% / 0.2; /* rgba(201,164,91,.20) */
+    --font-body: 'PT Sans', sans-serif;
+    --font-heading: 'Playfair Display', serif;
 
-    --background: var(--bg);
-    --foreground: var(--text);
-    --card: var(--bg-2);
-    --card-foreground: var(--text);
-    --popover: var(--bg);
-    --popover-foreground: var(--text);
-    --primary: var(--gold);
-    --primary-foreground: 216 21% 5%;
-    --secondary: var(--bg-2);
-    --secondary-foreground: var(--text);
-    --muted: var(--muted-fg);
-    --muted-foreground: var(--muted-fg);
-    --accent: var(--gold);
-    --accent-foreground: var(--text);
-    --destructive: 0 63% 31%;
-    --destructive-foreground: var(--text);
-    --border: var(--border);
-    --input: var(--border);
-    --ring: var(--gold);
+    /* Light Theme Colors (In HSL format for ShadCN) */
+    --background: 40 33% 95%; /* #F5F0E8 - Warm Ivory */
+    --foreground: 0 0% 10%; /* #1A1A1A - Dark Text */
+    --card: 0 0% 100%; /* #FFFFFF - White Surface */
+    --card-foreground: 0 0% 10%; /* #1A1A1A */
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    
+    --primary: 43 58% 48%; /* #B8923B - Champagne Gold */
+    --primary-foreground: 0 0% 10%;
+
+    --secondary: 40 33% 95%; /* Background for secondary elements */
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 40%;
+    
+    --accent: 44 48% 67%; /* #D6C08B - Light Gold Accent */
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 85%;
+    --ring: 43 58% 48%; /* #B8923B */
     
     --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark Theme Colors (Cinematic) */
+    --background: 222 84% 4%; /* #07090C - Deep Blue/Black */
+    --foreground: 220 40% 95%; /* #e9eef5 - Light Text */
+    --card: 220 50% 6%; /* #0C1016 - Dark Surface */
+    --card-foreground: 220 40% 95%;
     
+    --popover: 222 84% 4%;
+    --popover-foreground: 220 40% 95%;
+
+    --primary: 44 59% 55%; /* #C8A44D - Gold */
+    --primary-foreground: 222 84% 4%;
+
+    --secondary: 220 50% 6%;
+    --secondary-foreground: 220 40% 95%;
+
+    --muted: 215 25% 65%; /* #a8b3c2 - Muted Text */
+    --muted-foreground: 215 25% 65%;
+
+    --accent: 44 65% 69%; /* #E2C77A - Lighter Gold */
+    --accent-foreground: 222 84% 4%;
+    
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 220 40% 95%;
+    
+    --border: 220 20% 95% / 0.08;
+    --input: 220 20% 95% / 0.08;
+    --ring: 44 59% 55%;
+
     --sidebar-background: 214 28% 10%;
     --sidebar-foreground: 210 20% 90%;
     --sidebar-primary: 43 56% 54%;
@@ -44,37 +76,6 @@
     --sidebar-border: 0 0% 100% / 0.08;
     --sidebar-ring: 43 56% 54%;
   }
-
-  .dark {
-    --bg: 210 14% 5%;
-    --bg-2: 216 27% 12%;
-    --text: 38 13% 95%;
-    --muted-fg: 38 13% 95% / 0.7;
-    --border: 0 0% 100% / 0.08;
-    --gold: 43 56% 54%;
-    --gold-hover: 43 56% 60%;
-    --gold-glow: 43 56% 54% / 0.2;
-
-    --background: var(--bg);
-    --foreground: var(--text);
-    --card: var(--bg-2);
-    --card-foreground: var(--text);
-    --popover: var(--bg);
-    --popover-foreground: var(--text);
-    --primary: var(--gold);
-    --primary-foreground: 216 21% 5%;
-    --secondary: var(--bg-2);
-    --secondary-foreground: var(--text);
-    --muted: var(--muted-fg);
-    --muted-foreground: var(--muted-fg);
-    --accent: var(--gold);
-    --accent-foreground: var(--text);
-    --destructive: 0 63% 31%;
-    --destructive-foreground: var(--text);
-    --border: var(--border);
-    --input: var(--border);
-    --ring: var(--gold);
-  }
 }
 
 @layer base {
@@ -82,7 +83,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
     min-height: 100vh;
     overflow-x: hidden;
   }
@@ -91,8 +92,9 @@
     overflow-y: hidden;
   }
   
-  .dark body:not(.admin-body), body:not(.admin-body) {
-      background-image: radial-gradient(circle at 50% 50%, hsl(210, 23%, 8%) 0%, hsl(var(--background)) 100%);
+  .dark body:not(.admin-body) {
+      background-color: hsl(var(--background));
+      background-image: radial-gradient(circle at 50% 50%, hsl(var(--card)) 0%, hsl(var(--background)) 100%);
   }
 
   body:not(.admin-body)::after {
@@ -107,6 +109,10 @@
     pointer-events: none;
     z-index: -1;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
 }
 
 @layer utilities {
@@ -117,43 +123,18 @@
   .container-max {
     @apply max-w-7xl mx-auto;
   }
+  
+  .max-prose {
+    @apply max-w-[72ch];
+  }
 
   .h1-headline {
-    @apply font-headline text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight;
+    @apply font-heading text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight;
   }
   .h2-headline {
-    @apply font-headline text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight;
+    @apply font-heading text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight;
   }
   .h3-headline {
-    @apply font-headline text-2xl md:text-3xl font-medium;
+    @apply font-heading text-2xl md:text-3xl font-medium;
   }
 }
-
-/* CINEMATIC_TOKENS_START */
-:root {
-  --bg: #07090c;
-  --surface: #0c1016;
-  --text: #e9eef5;
-  --muted: #a8b3c2;
-  --gold: #c8a44d;
-  --gold2: #e2c77a;
-}
-
-html, body { height: 100%; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-pt-sans), system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  letter-spacing: 0.2px;
-}
-
-h1, h2, h3 {
-  font-family: var(--font-playfair-display), ui-serif, Georgia, serif;
-  letter-spacing: 0.2px;
-}
-
-p { color: rgba(233, 238, 245, 0.88); }
-
-.max-prose { max-width: 72ch; }
-/* CINEMATIC_TOKENS_END */

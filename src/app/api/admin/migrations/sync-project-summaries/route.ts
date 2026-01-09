@@ -1,6 +1,6 @@
 
 import { NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebase-admin.server';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase-admin.server';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { defaultProjectTypes } from '@/lib/defaults';
 import type { ProjectData } from '@/lib/types';
@@ -17,11 +17,33 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  const { db } = getAdminDb();
-
-  if (!db) {
+  const { db, info: dbInfo } = getAdminDb();
+  const auth = getAdminAuth();
+  
+  if (!db || !auth || dbInfo.mode === 'none') {
     return NextResponse.json({ ok: false, error: 'Admin SDK not initialized.' }, { status: 500 });
   }
+
+  // --- Authorization Check ---
+  try {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ ok: false, error: 'Unauthorized: Missing or invalid token.' }, { status: 401 });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+    const decodedToken = await auth.verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+    
+    const adminDoc = await db.collection('admins').doc(uid).get();
+    if (!adminDoc.exists || adminDoc.data()?.allowed !== true) {
+      return NextResponse.json({ ok: false, error: 'Forbidden: User is not an admin.' }, { status: 403 });
+    }
+  } catch (error: any) {
+    console.error("Auth check failed:", error);
+    return NextResponse.json({ ok: false, error: 'Unauthorized: Token verification failed.' }, { status: 401 });
+  }
+  // --- End Authorization Check ---
   
   let updated = 0;
   let skipped = 0;

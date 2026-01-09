@@ -3,6 +3,7 @@ import 'server-only';
 
 import { cert, getApps, initializeApp, App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { getAuth } from 'firebase-admin/auth';
 import fs from 'node:fs';
 
 type AdminInfo = {
@@ -15,6 +16,7 @@ type AdminInfo = {
 
 let adminApp: App | null = null;
 let adminDb: ReturnType<typeof getFirestore> | null = null;
+let adminAuth: ReturnType<typeof getAuth> | null = null;
 let adminRuntimeInfo: AdminInfo = {
     mode: 'none',
     projectId: null,
@@ -37,6 +39,7 @@ function initializeAdminApp() {
     if (existingApp) {
         adminApp = existingApp;
         adminDb = getFirestore(adminApp);
+        adminAuth = getAuth(adminApp);
         // Do not return here, let the runtime info be checked/set below
     }
     
@@ -60,6 +63,7 @@ function initializeAdminApp() {
                 if (!adminApp) {
                     adminApp = initializeApp({ credential: cert(serviceAccount) }, appName);
                     adminDb = getFirestore(adminApp);
+                    adminAuth = getAuth(adminApp);
                 }
                 adminRuntimeInfo = {
                     mode: "cert_file",
@@ -89,6 +93,7 @@ function initializeAdminApp() {
             if (!adminApp) {
                 adminApp = initializeApp({ credential: cert(serviceAccount) }, appName);
                 adminDb = getFirestore(adminApp);
+                adminAuth = getAuth(adminApp);
             }
             adminRuntimeInfo = {
                 mode: "cert_json",
@@ -114,6 +119,7 @@ function initializeAdminApp() {
             if (!adminApp) {
                 adminApp = initializeApp({ credential: cert(credential) }, appName);
                 adminDb = getFirestore(adminApp);
+                adminAuth = getAuth(adminApp);
             }
             adminRuntimeInfo = {
                 mode: "cert_split",
@@ -134,6 +140,7 @@ function initializeAdminApp() {
         if (!adminApp) {
             adminApp = initializeApp({ appName });
             adminDb = getFirestore(adminApp);
+            adminAuth = getAuth(adminApp);
         }
         adminRuntimeInfo = {
             mode: "adc",
@@ -161,4 +168,11 @@ export function getAdminDb() {
         initializeAdminApp();
     }
     return { db: adminDb, info: adminRuntimeInfo };
+}
+
+export function getAdminAuth() {
+    if (!adminApp) {
+        initializeAdminApp();
+    }
+    return adminAuth;
 }

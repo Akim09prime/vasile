@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { Locale } from '@/lib/i18n-config';
 import { Terminal } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getProjectsFromApi } from '@/lib/services/project-api-service';
+import { getPublicProjects } from '@/lib/services/project-api-service';
 import { ProjectTimeline } from './project-timeline';
 
 async function loadPortfolioData() {
@@ -14,7 +14,7 @@ async function loadPortfolioData() {
         // Fetch both categories and projects in parallel.
         const [categories, projects] = await Promise.all([
             getProjectTypes(),
-            getProjectsFromApi(),
+            getPublicProjects(),
         ]);
         const activeCategories = categories.filter(c => c.active);
         return { categories: activeCategories, projects, error: null };
@@ -30,7 +30,14 @@ export default async function PortfolioPage({ params }: { params: { lang: Locale
     const { categories, projects, error } = await loadPortfolioData();
 
     if (!portfolioPageData) {
-        return <p>Eroare: Nu s-au putut încărca datele paginii.</p>;
+        return (
+             <div className="container-max section-padding">
+                <Alert variant="destructive">
+                    <AlertTitle>Eroare de configurare</AlertTitle>
+                    <AlertDescription>Nu s-au putut încărca datele statice ale paginii de portofoliu.</AlertDescription>
+                </Alert>
+            </div>
+        );
     }
     
     const { intro } = portfolioPageData;
@@ -64,3 +71,4 @@ export default async function PortfolioPage({ params }: { params: { lang: Locale
         </>
     );
 }
+

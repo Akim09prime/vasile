@@ -99,13 +99,15 @@ export type Project = {
     location?: string;
     isPublished: boolean;
     publishedAt?: string;
+    completedAt?: string; // New field for completion date
     createdAt: string;
     coverMediaId?: string;
     media: ImagePlaceholder[]; // Changed from mediaIds
     image?: ImagePlaceholder;
+    rating?: number; // Optional project rating
 }
 
-export type ProjectData = Omit<Project, 'id' | 'createdAt' | 'publishedAt' | 'image' >;
+export type ProjectData = Omit<Project, 'id' | 'createdAt' | 'publishedAt' | 'image' | 'rating'>;
 
 export type Lead = {
     id: string;

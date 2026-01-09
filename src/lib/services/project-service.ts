@@ -8,7 +8,7 @@ import { PlaceHolderImages } from '../placeholder-images';
 import type { ImagePlaceholder } from '../placeholder-images';
 import { getSeedProjects } from './placeholder-db';
 import { defaultProjectTypes } from '../defaults';
-import { collection, getDocs, query, where, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, setDoc, Query as FirestoreQuery } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, setDoc, Query as FirestoreQuery, Timestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -52,6 +52,7 @@ export async function getProjectsFromFirestore(params: { showUnpublished?: boole
             
             const createdAt = data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString();
             const publishedAt = data.publishedAt?.toDate?.()?.toISOString() || undefined;
+            const completedAt = data.completedAt?.toDate?.()?.toISOString() || undefined;
             const coverImage = PlaceHolderImages.find(p => p.id === data.coverMediaId);
 
             return {
@@ -65,10 +66,12 @@ export async function getProjectsFromFirestore(params: { showUnpublished?: boole
                 location: data.location,
                 isPublished: data.isPublished,
                 publishedAt: publishedAt,
+                completedAt: completedAt,
                 createdAt: createdAt,
                 coverMediaId: data.coverMediaId,
                 media: data.media || [],
                 image: coverImage || null,
+                rating: data.rating || 0,
             } as Project;
         });
         
@@ -122,10 +125,12 @@ export async function getProjectById(id: string): Promise<Project | null> {
             location: data.location,
             isPublished: data.isPublished,
             publishedAt: data.publishedAt?.toDate?.().toISOString(),
+            completedAt: data.completedAt?.toDate?.().toISOString(),
             createdAt: data.createdAt.toDate().toISOString(),
             coverMediaId: data.coverMediaId,
             media: data.media || [],
             image: coverImage || null,
+            rating: data.rating || 0,
         };
     } catch (error: any) {
         if (error.code === 'permission-denied') {
@@ -146,7 +151,7 @@ export async function createProject(projectData: ProjectData): Promise<string> {
     const categorySlug = defaultProjectTypes.find((pt: any) => pt.label_ro === projectData.category)?.slug || 'uncategorized';
     const generatedSlug = slugify(projectData.name);
 
-    const fullData = {
+    const fullData: any = {
         ...projectData,
         media: projectData.media || [],
         slug: generatedSlug,
@@ -154,6 +159,7 @@ export async function createProject(projectData: ProjectData): Promise<string> {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         publishedAt: projectData.isPublished ? serverTimestamp() : null,
+        completedAt: projectData.completedAt ? Timestamp.fromDate(new Date(projectData.completedAt)) : null,
     };
     
     const docRef = await addDoc(collection(db, 'projects'), fullData);
@@ -184,6 +190,10 @@ export async function updateProject(id: string, projectData: Partial<ProjectData
     } else if (projectData.isPublished === false && currentData.isPublished) {
         updatePayload.publishedAt = null;
     }
+
+    if (projectData.completedAt) {
+        updatePayload.completedAt = Timestamp.fromDate(new Date(projectData.completedAt));
+    }
     
     await updateDoc(projectRef, updatePayload);
     await syncProjectSummary(id);
@@ -202,7 +212,7 @@ export async function seedDatabase(): Promise<void> {
         const docSnap = await getDoc(docRef);
 
         if (!docSnap.exists()) {
-             await setDoc(docRef, { ...project, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+             await setDoc(docRef, { ...project, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), completedAt: serverTimestamp() });
              await syncProjectSummary(tempId);
         }
     }
@@ -231,7 +241,8 @@ export async function syncProjectSummary(projectId: string): Promise<void> {
       summary: projectData.summary,
       location: projectData.location,
       isPublished: projectData.isPublished,
-      publishedAt: projectData.isPublished ? (projectSnap.data().publishedAt || serverTimestamp()) : null,
+      publishedAt: projectSnap.data().publishedAt || null, // Keep it consistent
+      completedAt: projectSnap.data().completedAt || null, // Copy completion date
       createdAt: projectSnap.data().createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
       coverMediaId: projectData.coverMediaId,
@@ -249,6 +260,7 @@ export async function syncProjectSummary(projectId: string): Promise<void> {
           description: coverImage.description,
           imageHint: coverImage.imageHint,
       } : null,
+      rating: projectData.rating || 0,
     };
     
     await setDoc(summaryRef, summaryPayload, { merge: true });

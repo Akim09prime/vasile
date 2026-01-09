@@ -9,107 +9,92 @@ import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Locale } from '@/lib/i18n-config';
-import { ArrowRight, Loader, Calendar, MapPin, Tag, Terminal } from 'lucide-react';
+import { ArrowRight, Loader, Calendar, MapPin, Tag, Terminal, ChevronsRight } from 'lucide-react';
 import { Project, ProjectType } from '@/lib/types';
 import { useParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { motion } from 'framer-motion';
 
 const ALL_CATEGORIES_ID = 'toate';
 
-// This is the V1 component, stable and reads from the API.
-function V1ProjectCard({ project, lang, index }: { project: Project; lang: Locale, index: number }) {
-  const ref = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-           element.dataset.inview = 'true';
-           observer.unobserve(element);
-        }
-      },
-      { threshold: 0.1 }
-    );
-    
-    observer.observe(element);
-
-    return () => {
-      if (element) {
-        observer.unobserve(element);
-      }
-    };
-  }, []);
-
+function TimelineCard({ project, lang, index }: { project: Project; lang: Locale, index: number }) {
   const alignment = index % 2 === 0 ? 'lg:self-start' : 'lg:self-end';
-  // Use slug if available and valid, otherwise fall back to id for robust linking
   const projectKey = (project.slug && project.slug.trim()) ? project.slug : project.id;
   const href = `/${lang}/portofoliu/${projectKey}`;
-  const year = project.publishedAt ? new Date(project.publishedAt).getFullYear() : null;
   
+  const dateToUse = project.completedAt || project.publishedAt || project.createdAt;
+  const year = dateToUse ? new Date(dateToUse).getFullYear() : null;
+  const fullDate = dateToUse ? new Date(dateToUse).toLocaleDateString(lang, { month: 'long', year: 'numeric' }) : null;
+
   return (
-    <div
-      ref={ref}
+    <motion.div
       data-project-id={project.id}
       className={cn(
-        'relative flex flex-col md:flex-row items-center gap-8 w-full max-w-4xl transition-all duration-1000 ease-in-out opacity-0 translate-y-10',
-        'data-[inview=true]:opacity-100 data-[inview=true]:translate-y-0',
-        alignment,
+        'relative flex w-full max-w-4xl flex-col items-center gap-6 md:flex-row',
+        alignment
       )}
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
     >
-      <div className={cn('relative w-full h-80 md:w-1/2 overflow-hidden rounded-lg group', index % 2 === 1 && 'md:order-2')}>
-        {project.image ? (
-          <Image
-            src={project.image.imageUrl}
-            alt={project.image.description || ''}
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            data-ai-hint={project.image.imageHint}
-          />
-        ) : (
-          <div className="w-full h-full bg-secondary flex items-center justify-center">
-            <p className="text-muted-foreground text-sm">No image</p>
-          </div>
-        )}
-      </div>
-      <div className={cn('md:w-1/2 space-y-4 text-center md:text-left', index % 2 === 1 && 'md:order-1')}>
-        <h3 className="h3-headline">{project.name}</h3>
-        <p className="text-muted-foreground">{project.summary}</p>
-        <div className="flex flex-wrap justify-center md:justify-start gap-3 text-sm text-muted-foreground">
-          {year && (
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4" />
-              <span>{Number.isFinite(year) ? year : ''}</span>
-            </div>
-
-          )}
-          {project.location && (
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4" />
-              <span>{project.location}</span>
-            </div>
-          )}
-           <div className="flex items-center gap-1.5">
-              <Tag className="w-4 h-4" />
-              <span>{project.category}</span>
-            </div>
+        {/* Date on the timeline */}
+        <div className={cn(
+            "absolute top-0 z-10 hidden items-center gap-4 lg:flex",
+            index % 2 === 0 ? 'left-1/2 flex-row-reverse -translate-x-[calc(100%_+_2.5rem)]' : 'left-1/2 flex-row translate-x-[2.5rem]'
+        )}>
+            <div className="h-px w-10 bg-border"></div>
+            {fullDate && <span className="text-sm font-semibold text-muted-foreground">{fullDate}</span>}
         </div>
-        <Button asChild>
-          <Link href={href}>
-            {lang === 'ro' ? 'Vezi Detalii' : 'View Details'} <ArrowRight />
-          </Link>
-        </Button>
-         {process.env.NODE_ENV === "development" && (
-            <div className="text-xs text-muted-foreground pt-2 font-mono">
-                ID: {project.id} | Slug: {project.slug || 'N/A'}
+
+      {/* Content Card */}
+      <div className={cn("relative flex w-full flex-col overflow-hidden rounded-lg border bg-card shadow-sm md:flex-row", index % 2 === 1 && 'md:order-2')}>
+        <div className={cn('relative w-full shrink-0 md:w-1/2 group h-80')}>
+          {project.image ? (
+            <Image
+              src={project.image.imageUrl}
+              alt={project.image.description || ''}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              data-ai-hint={project.image.imageHint}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-secondary">
+              <p className="text-sm text-muted-foreground">No image</p>
             </div>
-        )}
+          )}
+        </div>
+        <div className="flex flex-col p-6">
+            <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                {year && (
+                    <div className="flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4" />
+                    <span>{year}</span>
+                    </div>
+                )}
+                {project.location && (
+                    <div className="flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4" />
+                    <span>{project.location}</span>
+                    </div>
+                )}
+                <div className="flex items-center gap-1.5">
+                    <Tag className="w-4 h-4" />
+                    <span>{project.category}</span>
+                </div>
+            </div>
+          <h3 className="h3-headline">{project.name}</h3>
+          <p className="mt-2 text-muted-foreground flex-grow">{project.summary}</p>
+          <Button asChild className="mt-4 self-start">
+            <Link href={href}>
+              {lang === 'ro' ? 'Vezi Detalii' : 'View Details'} <ChevronsRight />
+            </Link>
+          </Button>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -158,11 +143,6 @@ export default function PortfolioPage() {
                 if (!data.ok) {
                     throw new Error(data.error || 'API returned an error');
                 }
-                if (process.env.NODE_ENV === 'development') {
-                    console.log('--- DEBUG: API /api/public/portfolio response ---');
-                    console.log('First item:', data.items?.[0]);
-                    console.log('------------------------------------------------');
-                }
                 setProjects(data.items);
             } catch (error: any) {
                 const msg = typeof error?.message === 'string' ? error.message : String(error);
@@ -193,7 +173,6 @@ export default function PortfolioPage() {
         selectedCategoryId === ALL_CATEGORIES_ID || p.categorySlug === selectedCategoryId
     );
 
-    // V1 Render Logic
     return (
         <>
             <PageHeader
@@ -243,10 +222,10 @@ export default function PortfolioPage() {
                         </AlertDescription>
                     </Alert>
                  ) : filteredProjects.length > 0 ? (
-                    <div className="relative flex flex-col items-center gap-16 md:gap-24">
+                    <div className="relative flex flex-col items-center gap-12 md:gap-16">
                        <div className="absolute top-0 bottom-0 w-px bg-border left-1/2 -translate-x-1/2 hidden lg:block" aria-hidden="true" />
                         {filteredProjects.map((project, index) => (
-                            <V1ProjectCard key={project.id} project={project} lang={lang} index={index} />
+                            <TimelineCard key={project.id} project={project} lang={lang} index={index} />
                         ))}
                     </div>
                 ) : (

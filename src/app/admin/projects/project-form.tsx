@@ -5,6 +5,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
+import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -25,10 +26,12 @@ import { getProjectTypes } from "@/lib/services/settings-service"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
-import { CheckCircle, Star } from "lucide-react"
+import { CheckCircle, Star, CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 
 
 const imagePlaceholderSchema = z.object({
@@ -46,6 +49,7 @@ const formSchema = z.object({
   summary: z.string().optional(),
   content: z.string().optional(),
   location: z.string().optional(),
+  completedAt: z.date().optional(),
   coverMediaId: z.string().optional(),
   media: z.array(imagePlaceholderSchema).optional().default([]),
   isPublished: z.boolean().default(false),
@@ -78,6 +82,7 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
       summary: project?.summary || "",
       content: project?.content || "",
       location: project?.location || "",
+      completedAt: project?.completedAt ? new Date(project.completedAt) : undefined,
       coverMediaId: project?.coverMediaId || "",
       media: project?.media || [],
       isPublished: project?.isPublished || false,
@@ -109,31 +114,31 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
   }
 
   const updateMediaProperty = (imageId: string, property: 'rating' | 'isTop', value: any) => {
-      const currentMedia = form.getValues("media") || [];
-      const updatedMedia = currentMedia.map(item => {
-          if (item.id === imageId) {
-              const newItem = { ...item };
-              if (property === 'rating') {
-                  newItem.rating = value;
-                  newItem.isTop = value === 5; // Also mark as top if rating is 5
-              } else if (property === 'isTop') {
-                  newItem.isTop = value;
-                  // If marking as top, set rating to 5. If unmarking, don't change rating unless it was 5.
-                  if (value === true) {
-                      newItem.rating = 5;
-                  } else if (value === false && newItem.rating === 5) {
-                      newItem.rating = 0; // Or keep it, based on desired UX. Resetting is cleaner.
-                  }
-              }
-              return newItem;
-          }
-          return item;
-      });
-      form.setValue("media", updatedMedia, { shouldDirty: true });
+    const currentMedia = form.getValues("media") || [];
+    const updatedMedia = currentMedia.map(item => {
+        if (item.id === imageId) {
+            const newItem = { ...item };
+            if (property === 'rating') {
+                newItem.rating = value;
+                newItem.isTop = value === 5; // Also mark as top if rating is 5
+            } else if (property === 'isTop') {
+                newItem.isTop = value;
+                // If marking as top, set rating to 5. If unmarking, don't change rating unless it was 5.
+                if (value === true) {
+                    newItem.rating = 5;
+                } else if (value === false && newItem.rating === 5) {
+                    newItem.rating = 0; // Or keep it, based on desired UX. Resetting is cleaner.
+                }
+            }
+            return newItem;
+        }
+        return item;
+    });
+    form.setValue("media", updatedMedia, { shouldDirty: true });
   };
   
   const setCoverId = (id: string) => {
-    form.setValue("coverMediaId", id);
+    form.setValue("coverMediaId", id, { shouldDirty: true });
   }
 
   return (
@@ -191,6 +196,47 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
                             <FormMessage />
                             </FormItem>
                         )}
+                        />
+                      <FormField
+                          control={form.control}
+                          name="completedAt"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                              <FormLabel>Completion Date</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant={"outline"}
+                                      className={cn(
+                                        "w-full pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
+                                      )}
+                                    >
+                                      {field.value ? (
+                                        format(field.value, "PPP")
+                                      ) : (
+                                        <span>Pick a date</span>
+                                      )}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    disabled={(date) =>
+                                      date > new Date() || date < new Date("1900-01-01")
+                                    }
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
                 </div>
                 <FormField

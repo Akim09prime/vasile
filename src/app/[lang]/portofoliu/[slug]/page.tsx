@@ -1,126 +1,188 @@
 
+'use client';
+
+import * as React from 'react';
 import { Locale } from "@/lib/i18n-config";
 import Image from "next/image";
-import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, MapPin, Tag, Terminal } from "lucide-react";
+import { ArrowRight, Calendar, MapPin, Tag, Terminal, X, ChevronLeft, ChevronRight, Loader } from "lucide-react";
 import Link from "next/link";
-import { Metadata, ResolvingMetadata } from 'next';
 import type { Project } from "@/lib/types";
+import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
-type Props = {
-  params: { slug: string, lang: Locale }
-}
-
-function getBaseUrl() {
-  if (typeof window !== 'undefined') {
-    // browser should use relative url
-    return '';
-  }
-  if (process.env.VERCEL_URL) {
-    // Vercel deployment
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  // development server
-  const host = process.env.HOST ?? 'localhost';
-  const port = process.env.PORT ?? 3000;
-  return `http://${host}:${port}`;
-}
-
-
-async function getProjectFromApi(slug: string): Promise<{ project: Project | null; response: Response; body?: any }> {
+// This function now runs on the client.
+async function getProjectFromApi(slug: string): Promise<{ project: Project | null; error?: any }> {
     try {
-        const fetchUrl = `${getBaseUrl()}/api/public/portfolio/${slug}`;
+        const fetchUrl = `/api/public/portfolio/${slug}`;
         console.log(`[ProjectDetailsPage] Fetching project from: ${fetchUrl}`);
             
         const res = await fetch(fetchUrl, { cache: 'no-store' });
 
-        const body = await res.json().catch(() => ({ error: 'Failed to parse JSON body' }));
+        const body = await res.json();
         
         if (!res.ok) {
-           if (res.status === 404) {
-             notFound();
-           }
-           return { project: null, response: res, body };
+           return { project: null, error: { status: res.status, body: body } };
         }
         
         if (body.ok) {
-            return { project: body.item, response: res, body: body };
+            return { project: body.item, error: null };
         } else {
-             if (res.status === 404 || body.code === 'NOT_FOUND') {
-                notFound();
-            }
-            return { project: null, response: res, body: body };
+            return { project: null, error: { status: res.status, body: body } };
         }
 
     } catch (error) {
         console.error(`Fetch failed for project ${slug}:`, error);
-        // This simulates a 500 server error response for the caller to handle
-        const mockResponse = new Response(JSON.stringify({ error: 'Fetch failed' }), { status: 500 });
-        return { project: null, response: mockResponse, body: { error: (error as Error).message } };
+        return { project: null, error: { status: 500, body: { error: (error as Error).message } } };
     }
 }
 
+function Gallery({ project }: { project: Project }) {
+    const [lightboxOpen, setLightboxOpen] = React.useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
 
-export async function generateMetadata(
-  { params }: Props,
-  parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { slug, lang } = params;
-  const { project } = await getProjectFromApi(slug);
+    const galleryMedia = project.media && project.media.length > 0 ? project.media : [];
+    if (galleryMedia.length === 0) return null;
 
-  if (!project) {
-    return {
-      title: lang === 'ro' ? 'Proiect Negăsit' : 'Project Not Found',
-      description: lang === 'ro' ? 'Proiectul pe care îl căutați nu există.' : 'The project you are looking for does not exist.',
-    }
-  }
-  
-  const previousImages = (await parent).openGraph?.images || []
+    const openLightbox = (index: number) => {
+        setSelectedImageIndex(index);
+        setLightboxOpen(true);
+    };
 
-  return {
-    title: `${project.name} | CARVELLO`,
-    description: project.summary,
-    openGraph: {
-      title: project.name,
-      description: project.summary,
-      images: [
-        project.image?.imageUrl || '',
-        ...previousImages,
-      ],
-    },
-  }
-}
+    const closeLightbox = () => setLightboxOpen(false);
 
-export default async function ProjectDetailsPage({ params }: { params: { slug: string, lang: Locale }}) {
-    const { slug, lang } = params;
-    const { project, response, body } = await getProjectFromApi(slug);
+    const nextImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedImageIndex((prev) => (prev + 1) % galleryMedia.length);
+    };
+    
+    const prevImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedImageIndex((prev) => (prev - 1 + galleryMedia.length) % galleryMedia.length);
+    };
 
-    if (!project) {
-        return (
-            <div className="container-max section-padding">
-                <Card className="p-6">
-                    <h1 className="h2-headline text-destructive">Project Not Found or API Error</h1>
-                    <p className="mt-4">Could not fetch project details for identifier: <strong>{slug}</strong></p>
-                    <div className="mt-4 p-4 bg-secondary rounded-md text-sm">
-                        <h3 className="font-bold mb-2 flex items-center gap-2"><Terminal className="w-4 h-4"/>Debug Information (Dev Only)</h3>
-                        <pre className="whitespace-pre-wrap break-all font-mono text-xs">
-                           <p><strong>Status:</strong> {response.status} {response.statusText}</p>
-                           <strong>API Response Body:</strong>
-                           <div className="mt-2 p-2 border rounded bg-background/50">
-                                {JSON.stringify(body, null, 2)}
-                           </div>
-                        </pre>
+    return (
+        <section className="bg-secondary/50 section-padding">
+            <div className="container-max">
+                 <div className="text-center max-w-3xl mx-auto mb-12">
+                    <h2 className="h2-headline">Galerie Proiect</h2>
+                    <p className="mt-4 text-lg text-foreground/70">
+                        Explorați detaliile și finisajele acestui proiect.
+                    </p>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                     {galleryMedia.map((item, index) => (
+                        <div key={item.id} className="break-inside-avoid group relative cursor-pointer" onClick={() => openLightbox(index)}>
+                            <Image
+                                src={item.imageUrl}
+                                alt={item.description}
+                                width={500}
+                                height={500}
+                                className="w-full h-auto rounded-lg object-cover aspect-[4/3] transition-all group-hover:brightness-75"
+                                data-ai-hint={item.imageHint}
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center p-4">
+                               <p className="text-white text-center text-sm">{item.description}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+                <DialogContent className="max-w-6xl w-full p-0 bg-transparent border-0" onPointerDownOutside={closeLightbox}>
+                    <div className="relative aspect-[16/10]">
+                        <Image
+                            src={galleryMedia[selectedImageIndex].imageUrl}
+                            alt={galleryMedia[selectedImageIndex].description}
+                            fill
+                            className="object-contain"
+                        />
+                         <DialogClose className="absolute right-2 top-2 z-50">
+                            <Button size="icon" variant="secondary" className="rounded-full h-8 w-8">
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </DialogClose>
                     </div>
-                </Card>
+                     <Button size="icon" variant="secondary" className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full h-10 w-10 z-50" onClick={prevImage}><ChevronLeft/></Button>
+                     <Button size="icon" variant="secondary" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full h-10 w-10 z-50" onClick={nextImage}><ChevronRight/></Button>
+
+                    <div className="bg-background/80 backdrop-blur-lg p-4 text-center mt-2 rounded-b-lg">
+                        <p className="text-white">{galleryMedia[selectedImageIndex].description}</p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </section>
+    );
+}
+
+export default function ProjectDetailsPage({ params }: { params: { slug: string, lang: Locale }}) {
+    const { slug, lang } = params;
+    const [project, setProject] = React.useState<Project | null>(null);
+    const [error, setError] = React.useState<any | null>(null);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        async function loadProject() {
+            setLoading(true);
+            const { project: fetchedProject, error: fetchError } = await getProjectFromApi(slug);
+            setProject(fetchedProject);
+            setError(fetchError);
+            setLoading(false);
+
+            if (fetchedProject) {
+                document.title = `${fetchedProject.name} | CARVELLO`;
+            }
+        }
+        loadProject();
+    }, [slug]);
+
+    if (loading) {
+        return (
+             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+                <Loader className="h-8 w-8 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">Încărcare proiect...</p>
             </div>
         )
     }
 
-    // Since we fetch from project_summaries, content is not available.
-    // We will display the summary in its place for now.
+    if (error || !project) {
+        const is404 = error?.status === 404;
+        return (
+            <div className="container-max section-padding">
+                <Card className="p-6 text-center">
+                    <h1 className="h2-headline text-destructive">{is404 ? "Proiectul nu a fost găsit" : "Eroare la încărcare"}</h1>
+                    <p className="mt-4">
+                        {is404 
+                            ? `Proiectul cu identificatorul "${slug}" nu există sau nu este publicat.`
+                            : `A apărut o eroare la încărcarea detaliilor proiectului.`
+                        }
+                    </p>
+                    <div className="mt-6">
+                        <Button asChild>
+                            <Link href={`/${lang}/portofoliu`}>Înapoi la Portofoliu</Link>
+                        </Button>
+                    </div>
+                    {process.env.NODE_ENV === "development" && error && (
+                        <div className="mt-6 p-4 bg-secondary rounded-md text-sm text-left">
+                            <h3 className="font-bold mb-2 flex items-center gap-2"><Terminal className="w-4 h-4"/>Debug Information (Dev Only)</h3>
+                            <pre className="whitespace-pre-wrap break-all font-mono text-xs">
+                               <p><strong>Status:</strong> {error.status}</p>
+                               <strong>API Response Body:</strong>
+                               <div className="mt-2 p-2 border rounded bg-background/50">
+                                    {JSON.stringify(error.body, null, 2)}
+                               </div>
+                            </pre>
+                        </div>
+                    )}
+                </Card>
+            </div>
+        )
+    }
+    
+    // Fallback if content is missing
     const contentHtml = project.content || `<p>${project.summary}</p>`;
 
 
@@ -188,35 +250,7 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
                 </div>
             </section>
             
-            {project.media && project.media.length > 0 && (
-                 <section className="bg-secondary/50 section-padding">
-                    <div className="container-max">
-                         <div className="text-center max-w-3xl mx-auto mb-12">
-                            <h2 className="h2-headline">Galerie Proiect</h2>
-                            <p className="mt-4 text-lg text-foreground/70">
-                                Explorați detaliile și finisajele acestui proiect.
-                            </p>
-                        </div>
-                        <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
-                             {project.media.map(item => (
-                                <div key={item.id} className="break-inside-avoid group relative">
-                                    <Image
-                                        src={item.imageUrl}
-                                        alt={item.description}
-                                        width={500}
-                                        height={500}
-                                        className="w-full h-auto rounded-lg object-cover"
-                                        data-ai-hint={item.imageHint}
-                                    />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center p-4">
-                                       <p className="text-white text-center text-sm">{item.description}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-            )}
+            <Gallery project={project} />
         </>
     )
 }

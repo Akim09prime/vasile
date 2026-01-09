@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-body: 'PT Sans', sans-serif;
+    --font-heading: 'Playfair Display', serif;
+
+    --bg: 222 84% 4%; /* #07090c */
+    --surface: 220 50% 6%; /* #0c1016 */
+    --text: 220 40% 95%; /* #e9eef5 */
+    --muted-fg: 215 25% 65%; /* #a8b3c2 */
+    --border: 220 20% 95% / 0.08; /* rgba(233,238,245,0.08) */
+    
+    --gold: 44 59% 55%; /* #c8a44d */
+    --gold-hover: 44 65% 69%; /* #e2c77a */
+    --gold-glow: 44 59% 55% / 0.2;
+
+    --background: var(--bg);
+    --foreground: var(--text);
+    --card: var(--surface);
+    --card-foreground: var(--text);
+    --popover: var(--bg);
+    --popover-foreground: var(--text);
+    --primary: var(--gold);
+    --primary-foreground: 222 84% 4%;
+    --secondary: var(--surface);
+    --secondary-foreground: var(--text);
+    --muted: var(--muted-fg);
+    --muted-foreground: var(--muted-fg);
+    --accent: var(--gold);
+    --accent-foreground: var(--text);
+    --destructive: 0 63% 31%;
+    --destructive-foreground: var(--text);
+    --border: var(--border);
+    --input: var(--border);
+    --ring: var(--gold);
+    
+    --radius: 0.5rem;
+
+    --sidebar-background: 214 28% 10%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 43 56% 54%;
+    --sidebar-primary-foreground: 220 13% 6%;
+    --sidebar-accent: 216 27% 12%;
+    --sidebar-accent-foreground: 43 56% 66%;
+    --sidebar-border: 0 0% 100% / 0.08;
+    --sidebar-ring: 43 56% 54%;
+  }
+
+  .dark {
+    --bg: 222 84% 4%; /* #07090c */
+    --surface: 220 50% 6%; /* #0c1016 */
+    --text: 220 40% 95%; /* #e9eef5 */
+    --muted-fg: 215 25% 65%; /* #a8b3c2 */
+    --border: 220 20% 95% / 0.08;
+    
+    --gold: 44 59% 55%;
+    --gold-hover: 44 65% 69%;
+    --gold-glow: 44 59% 55% / 0.2;
+
+    --background: var(--bg);
+    --foreground: var(--text);
+    --card: var(--surface);
+    --card-foreground: var(--text);
+    --popover: var(--bg);
+    --popover-foreground: var(--text);
+    --primary: var(--gold);
+    --primary-foreground: 222 84% 4%;
+    --secondary: var(--surface);
+    --secondary-foreground: var(--text);
+    --muted: var(--muted-fg);
+    --muted-foreground: var(--muted-fg);
+    --accent: var(--gold);
+    --accent-foreground: var(--text);
+    --destructive: 0 63% 31%;
+    --destructive-foreground: var(--text);
+    --border: var(--border);
+    --input: var(--border);
+    --ring: var(--gold);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body.admin-body {
+    overflow-y: hidden;
+  }
+  
+  body:not(.admin-body) {
+      background-color: hsl(var(--bg));
+      background-image: radial-gradient(circle at 50% 50%, hsl(var(--surface)) 0%, hsl(var(--bg)) 100%);
+  }
+
+  body:not(.admin-body)::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJub2lzZSI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGUmVxdWVuY3k9IjAuODUiIG51bU9jdGF2ZXM9IjEwIiBzdGl0Y2hUaWxlcz0ic3RpdGNoIiAvPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAuMTUgMCIgLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWx0ZXI9InVybCgjbnoaXNlKSIgb3BhY2l0eT0iMSIgLz48L3N2Zz4=');
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer utilities {
+  .section-padding {
+    @apply px-6 py-16 md:px-10 md:py-24 lg:py-32;
+  }
+
+  .container-max {
+    @apply max-w-7xl mx-auto;
+  }
+  
+  .max-prose {
+    @apply max-w-[72ch];
+  }
+
+  .h1-headline {
+    @apply font-heading text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight;
+  }
+  .h2-headline {
+    @apply font-heading text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight;
+  }
+  .h3-headline {
+    @apply font-heading text-2xl md:text-3xl font-medium;
+  }
+}

@@ -47,7 +47,135 @@ async function getProjectFromApi(slug: string): Promise<{ project: Project | nul
     }
 }
 
-function Gallery({ project }: { project: Project }) {\n  const [lightboxOpen, setLightboxOpen] = React.useState(false);\n  const [selected, setSelected] = React.useState(0);\n\n  const mediaRaw = Array.isArray(project.media) ? project.media : [];\n  const media = mediaRaw.filter((m: any) => m && typeof m.imageUrl === "string" && m.imageUrl.length > 0);\n  if (media.length === 0) return null;\n\n  const open = (index: number) => { setSelected(index); setLightboxOpen(true); };\n  const close = () => setLightboxOpen(false);\n  const next = (e?: any) => { if (e?.stopPropagation) e.stopPropagation(); setSelected((p) => (p + 1) % media.length); };\n  const prev = (e?: any) => { if (e?.stopPropagation) e.stopPropagation(); setSelected((p) => (p - 1 + media.length) % media.length); };\n\n  React.useEffect(() => {\n    if (!lightboxOpen) return;\n    const onKey = (ev: KeyboardEvent) => {\n      if (ev.key === "Escape") close();\n      if (ev.key === "ArrowRight") next();\n      if (ev.key === "ArrowLeft") prev();\n    };\n    window.addEventListener("keydown", onKey);\n    return () => window.removeEventListener("keydown", onKey);\n  }, [lightboxOpen, media.length]);\n\n  const current = media[selected];\n\n  return (\n    <section className="py-14 md:py-20">\n      <div className="container-max px-6">\n        <div className="max-w-3xl mx-auto text-center mb-10">\n          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-cinematic-text">Galerie Proiect</h2>\n          <p className="mt-3 text-cinematic-muted">Detalii, texturi si finisaje — prezentate cinematic.</p>\n        </div>\n\n        <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start">\n          <div className="relative rounded-2xl overflow-hidden border border-cinematic-border shadow-cinematic-bloom bg-cinematic-surface">\n            <button type="button" onClick={() => open(selected)} className="group block w-full text-left" aria-label="Deschide in lightbox">\n              <div className="relative aspect-[16/10]">\n                <Image\n                  src={current.imageUrl}\n                  alt={current.description || project.name || "Imagine proiect"}\n                  fill\n                  sizes="(max-width: 1024px) 100vw, 900px"\n                  className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"\n                  priority\n                />\n                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-80 pointer-events-none" />\n              </div>\n              <div className="p-4 md:p-5">\n                <p className="text-sm md:text-base text-cinematic-text/90">{current.description || "Click pentru vizualizare"}</p>\n                <p className="mt-1 text-xs text-cinematic-muted">{selected + 1} / {media.length}</p>\n              </div>\n            </button>\n\n            <div className="absolute top-1/2 left-4 -translate-y-1/2 z-10">\n              <Button type="button" size="icon" variant="secondary" className="rounded-full h-10 w-10 backdrop-blur border border-cinematic-border shadow-cinematic-bloom" onClick={prev} aria-label="Imagine anterioara">\n                <ChevronLeft className="h-5 w-5" />\n              </Button>\n            </div>\n            <div className="absolute top-1/2 right-4 -translate-y-1/2 z-10">\n              <Button type="button" size="icon" variant="secondary" className="rounded-full h-10 w-10 backdrop-blur border border-cinematic-border shadow-cinematic-bloom" onClick={next} aria-label="Imagine urmatoare">\n                <ChevronRight className="h-5 w-5" />\n              </Button>\n            </div>\n          </div>\n\n          <div className="rounded-2xl border border-cinematic-border bg-cinematic-surface shadow-cinematic-bloom p-4">\n            <p className="text-sm text-cinematic-muted mb-3">Cadre</p>\n            <div className="grid grid-cols-3 gap-3">\n              {media.slice(0, 12).map((m: any, idx: number) => {\n                const active = idx === selected;\n                return (\n                  <button\n                    type="button"\n                    key={m.id || m.imageUrl || idx}\n                    onClick={() => setSelected(idx)}\n                    className={cn(\n                      "relative overflow-hidden rounded-xl border transition-all",\n                      active ? "border-cinematic-gold shadow-cinematic-bloom" : "border-cinematic-border hover:border-cinematic-gold/60"\n                    )}\n                    aria-label={"Selecteaza imaginea " + (idx + 1)}\n                  >\n                    <div className="relative aspect-[4/3]">\n                      <Image src={m.imageUrl} alt={m.description || project.name || "Thumbnail"} fill sizes="200px" className="object-cover" />\n                    </div>\n                    {active && <div className="absolute inset-0 ring-1 ring-cinematic-gold/60 pointer-events-none" />}\n                  </button>\n                );\n              })}\n            </div>\n            {media.length > 12 && <p className="mt-3 text-xs text-cinematic-muted">+ {media.length - 12} imagini (in lightbox)</p>}\n          </div>\n        </div>\n      </div>\n\n      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>\n        <DialogContent className="max-w-6xl w-full p-0 bg-transparent border-0 shadow-none" onPointerDownOutside={close}>\n          <div className="relative w-full rounded-2xl overflow-hidden border border-cinematic-border shadow-cinematic-lift bg-cinematic-surface">\n            <div className="relative aspect-[16/10]">\n              <Image src={media[selected].imageUrl} alt={media[selected].description || project.name || "Imagine proiect"} fill className="object-contain bg-black/30" sizes="100vw" />\n              <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-black/10" />\n            </div>\n\n            <DialogClose className="absolute right-3 top-3 z-50">\n              <Button size="icon" variant="secondary" className="rounded-full h-10 w-10 backdrop-blur border border-cinematic-border shadow-cinematic-bloom">\n                <X className="h-5 w-5" />\n              </Button>\n            </DialogClose>\n\n            <Button size="icon" variant="secondary" className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full h-11 w-11 z-50 backdrop-blur border border-cinematic-border shadow-cinematic-bloom" onClick={prev} aria-label="Imagine anterioara">\n              <ChevronLeft className="h-6 w-6" />\n            </Button>\n            <Button size="icon" variant="secondary" className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full h-11 w-11 z-50 backdrop-blur border border-cinematic-border shadow-cinematic-bloom" onClick={next} aria-label="Imagine urmatoare">\n              <ChevronRight className="h-6 w-6" />\n            </Button>\n\n            <div className="px-5 py-4">\n              <p className="text-sm md:text-base text-cinematic-text/90">{media[selected].description || ""}</p>\n              <p className="mt-1 text-xs text-cinematic-muted">{selected + 1} / {media.length} • ESC inchide • ← → navigheaza</p>\n            </div>\n          </div>\n        </DialogContent>\n      </Dialog>\n    </section>\n  );\n}\nexport default function ProjectDetailsPage({ params }: { params: { slug: string, lang: Locale }}) {
+function Gallery({ project }: { project: Project }) {
+  const [lightboxOpen, setLightboxOpen] = React.useState(false);
+  const [selected, setSelected] = React.useState(0);
+
+  const mediaRaw = Array.isArray(project.media) ? project.media : [];
+  const media = mediaRaw.filter((m: any) => m && typeof m.imageUrl === "string" && m.imageUrl.length > 0);
+  if (media.length === 0) return null;
+
+  const open = (index: number) => { setSelected(index); setLightboxOpen(true); };
+  const close = () => setLightboxOpen(false);
+  const next = (e?: any) => { if (e?.stopPropagation) e.stopPropagation(); setSelected((p) => (p + 1) % media.length); };
+  const prev = (e?: any) => { if (e?.stopPropagation) e.stopPropagation(); setSelected((p) => (p - 1 + media.length) % media.length); };
+
+  React.useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") close();
+      if (ev.key === "ArrowRight") next();
+      if (ev.key === "ArrowLeft") prev();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxOpen, media.length]);
+
+  const current = media[selected];
+
+  return (
+    <section className="py-14 md:py-20">
+      <div className="container-max px-6">
+        <div className="max-w-3xl mx-auto text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-cinematic-text">Galerie Proiect</h2>
+          <p className="mt-3 text-cinematic-muted">Detalii, texturi si finisaje — prezentate cinematic.</p>
+        </div>
+
+        <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start">
+          <div className="relative rounded-2xl overflow-hidden border border-cinematic-border shadow-cinematic-bloom bg-cinematic-surface">
+            <button type="button" onClick={() => open(selected)} className="group block w-full text-left" aria-label="Deschide in lightbox">
+              <div className="relative aspect-[16/10]">
+                <Image
+                  src={current.imageUrl}
+                  alt={current.description || project.name || "Imagine proiect"}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 900px"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-80 pointer-events-none" />
+              </div>
+              <div className="p-4 md:p-5">
+                <p className="text-sm md:text-base text-cinematic-text/90">{current.description || "Click pentru vizualizare"}</p>
+                <p className="mt-1 text-xs text-cinematic-muted">{selected + 1} / {media.length}</p>
+              </div>
+            </button>
+
+            <div className="absolute top-1/2 left-4 -translate-y-1/2 z-10">
+              <Button type="button" size="icon" variant="secondary" className="rounded-full h-10 w-10 backdrop-blur border border-cinematic-border shadow-cinematic-bloom" onClick={prev} aria-label="Imagine anterioara">
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="absolute top-1/2 right-4 -translate-y-1/2 z-10">
+              <Button type="button" size="icon" variant="secondary" className="rounded-full h-10 w-10 backdrop-blur border border-cinematic-border shadow-cinematic-bloom" onClick={next} aria-label="Imagine urmatoare">
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-cinematic-border bg-cinematic-surface shadow-cinematic-bloom p-4">
+            <p className="text-sm text-cinematic-muted mb-3">Cadre</p>
+            <div className="grid grid-cols-3 gap-3">
+              {media.slice(0, 12).map((m: any, idx: number) => {
+                const active = idx === selected;
+                return (
+                  <button
+                    type="button"
+                    key={m.id || m.imageUrl || idx}
+                    onClick={() => setSelected(idx)}
+                    className={cn(
+                      "relative overflow-hidden rounded-xl border transition-all",
+                      active ? "border-cinematic-gold shadow-cinematic-bloom" : "border-cinematic-border hover:border-cinematic-gold/60"
+                    )}
+                    aria-label={"Selecteaza imaginea " + (idx + 1)}
+                  >
+                    <div className="relative aspect-[4/3]">
+                      <Image src={m.imageUrl} alt={m.description || project.name || "Thumbnail"} fill sizes="200px" className="object-cover" />
+                    </div>
+                    {active && <div className="absolute inset-0 ring-1 ring-cinematic-gold/60 pointer-events-none" />}
+                  </button>
+                );
+              })}
+            </div>
+            {media.length > 12 && <p className="mt-3 text-xs text-cinematic-muted">+ {media.length - 12} imagini (in lightbox)</p>}
+          </div>
+        </div>
+      </div>
+
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="max-w-6xl w-full p-0 bg-transparent border-0 shadow-none" onPointerDownOutside={close}>
+          <div className="relative w-full rounded-2xl overflow-hidden border border-cinematic-border shadow-cinematic-lift bg-cinematic-surface">
+            <div className="relative aspect-[16/10]">
+              <Image src={media[selected].imageUrl} alt={media[selected].description || project.name || "Imagine proiect"} fill className="object-contain bg-black/30" sizes="100vw" />
+              <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-black/10" />
+            </div>
+
+            <DialogClose className="absolute right-3 top-3 z-50">
+              <Button size="icon" variant="secondary" className="rounded-full h-10 w-10 backdrop-blur border border-cinematic-border shadow-cinematic-bloom">
+                <X className="h-5 w-5" />
+              </Button>
+            </DialogClose>
+
+            <Button size="icon" variant="secondary" className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full h-11 w-11 z-50 backdrop-blur border border-cinematic-border shadow-cinematic-bloom" onClick={prev} aria-label="Imagine anterioara">
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+            <Button size="icon" variant="secondary" className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full h-11 w-11 z-50 backdrop-blur border border-cinematic-border shadow-cinematic-bloom" onClick={next} aria-label="Imagine urmatoare">
+              <ChevronRight className="h-6 w-6" />
+            </Button>
+
+            <div className="px-5 py-4">
+              <p className="text-sm md:text-base text-cinematic-text/90">{media[selected].description || ""}</p>
+              <p className="mt-1 text-xs text-cinematic-muted">{selected + 1} / {media.length} • ESC inchide • ← → navigheaza</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </section>
+  );
+}
+
+
+export default function ProjectDetailsPage({ params }: { params: { slug: string, lang: Locale }}) {
     const { slug, lang } = params;
     const [project, setProject] = React.useState<Project | null>(null);
     const [error, setError] = React.useState<any | null>(null);

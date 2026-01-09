@@ -1,7 +1,5 @@
 
 
-'use client';
-
 import { db, isFirebaseConfigValid } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import type { NavigationSettings, FooterSettings, ThemeSettings, ProjectType } from '@/lib/types';

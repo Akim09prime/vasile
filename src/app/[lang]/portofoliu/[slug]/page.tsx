@@ -47,6 +47,7 @@ async function getProjectFromApi(slug: string): Promise<{ project: Project | nul
     }
 }
 
+/* GALLERY_BLOCK_START */
 function Gallery({ project }: { project: Project }) {
   const [lightboxOpen, setLightboxOpen] = React.useState(false);
   const [selected, setSelected] = React.useState(0);
@@ -173,7 +174,7 @@ function Gallery({ project }: { project: Project }) {
     </section>
   );
 }
-
+/* GALLERY_BLOCK_END */
 
 export default function ProjectDetailsPage({ params }: { params: { slug: string, lang: Locale }}) {
     const { slug, lang } = params;

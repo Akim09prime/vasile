@@ -1,8 +1,9 @@
 
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, Controller } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,11 +25,11 @@ import { getProjectTypes } from "@/lib/services/settings-service"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
-import { X, CheckCircle, Star } from "lucide-react"
-import { produce } from "immer"
+import { CheckCircle, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+
 
 const imagePlaceholderSchema = z.object({
   id: z.string(),
@@ -108,23 +109,23 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
   }
   
   const updateMediaRating = (imageId: string, rating: number) => {
-      const updatedMedia = produce(form.getValues("media"), draft => {
-          const item = draft.find(m => m.id === imageId);
-          if (item) {
-              item.rating = rating;
-          }
-      });
-      form.setValue("media", updatedMedia);
+      const currentMedia = form.getValues("media");
+      const updatedMedia = currentMedia.map(item => 
+        item.id === imageId ? { ...item, rating: rating, isTop: rating === 5 } : item
+      );
+      form.setValue("media", updatedMedia, { shouldDirty: true });
   }
   
   const toggleMediaIsTop = (imageId: string) => {
-      const updatedMedia = produce(form.getValues("media"), draft => {
-          const item = draft.find(m => m.id === imageId);
-          if (item) {
-              item.isTop = !item.isTop;
-          }
+      const currentMedia = form.getValues("media");
+      const updatedMedia = currentMedia.map(item => {
+        if (item.id === imageId) {
+            const newIsTop = !item.isTop;
+            return { ...item, isTop: newIsTop, rating: newIsTop ? 5 : item.rating === 5 ? 0 : item.rating };
+        }
+        return item;
       });
-      form.setValue("media", updatedMedia);
+      form.setValue("media", updatedMedia, { shouldDirty: true });
   }
 
 
@@ -324,7 +325,5 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
     </Form>
   )
 }
-
-    
 
     

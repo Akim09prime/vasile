@@ -1,0 +1,43 @@
+{
+    "header": {
+        "nav": {
+            "Despre": "About",
+            "Servicii": "Services",
+            "Portofoliu": "Portfolio",
+            "Galerie": "Gallery",
+            "Contact": "Contact"
+        },
+        "quote": "Request a Quote"
+    },
+    "footer": {
+        "description": "Custom furniture, with millimetric precision. Design. CNC. 2K Finish. Installation.",
+        "navigation": "Navigation",
+        "legal": "Legal",
+        "contact": "Contact",
+        "copyright": "All rights reserved.",
+        "nav": {
+            "Despre": "About",
+            "Servicii": "Services",
+            "Portofoliu": "Portfolio",
+            "Galerie": "Gallery",
+            "Contact": "Contact"
+        },
+        "legalNav": {
+            "Termeni și Condiții": "Terms and Conditions",
+            "Confidențialitate": "Privacy Policy",
+            "Politica Cookies": "Cookies Policy"
+        }
+    },
+    "pages": {
+        "home": {
+            "hero": {
+                "title": "Custom furniture, with millimetric precision.",
+                "subtitle": "Design. CNC. 2K Finish. Installation. Everything under control, from sketch to result.",
+                "cta": {
+                    "primary": "Request a Quote",
+                    "secondary": "View Portfolio"
+                }
+            }
+        }
+    }
+}

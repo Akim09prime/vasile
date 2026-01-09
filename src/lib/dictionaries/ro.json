@@ -1,0 +1,43 @@
+{
+    "header": {
+        "nav": {
+            "Despre": "Despre",
+            "Servicii": "Servicii",
+            "Portofoliu": "Portofoliu",
+            "Galerie": "Galerie",
+            "Contact": "Contact"
+        },
+        "quote": "Cere ofertă"
+    },
+    "footer": {
+        "description": "Mobilier la comandă, cu precizie milimetrică. Proiectare. CNC. Finisaj 2K. Montaj.",
+        "navigation": "Navigație",
+        "legal": "Legal",
+        "contact": "Contact",
+        "copyright": "Toate drepturile rezervate.",
+        "nav": {
+            "Despre": "Despre",
+            "Servicii": "Servicii",
+            "Portofoliu": "Portofoliu",
+            "Galerie": "Galerie",
+            "Contact": "Contact"
+        },
+        "legalNav": {
+            "Termeni și Condiții": "Termeni și Condiții",
+            "Confidențialitate": "Confidențialitate",
+            "Politica Cookies": "Politica Cookies"
+        }
+    },
+    "pages": {
+        "home": {
+            "hero": {
+                "title": "Mobilier la comandă, cu precizie milimetrică.",
+                "subtitle": "Proiectare. CNC. Finisaj 2K. Montaj. Totul sub control, de la schiță la rezultat.",
+                "cta": {
+                    "primary": "Cere ofertă",
+                    "secondary": "Vezi portofoliu"
+                }
+            }
+        }
+    }
+}

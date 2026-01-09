@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 29% 96%; /* #F5F0E8 warm ivory */
+    --foreground: 240 10% 10%; /* #1A1A1A */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+    --primary: 43 54% 48%; /* #B8923B champagne gold */
+    --primary-foreground: 30 29% 5%;
+    --secondary: 30 28% 94%; /* #FAF6EF */
+    --secondary-foreground: 240 10% 10%;
+    --muted: 30 20% 88%;
+    --muted-foreground: 0 0% 10% / 0.68;
+    --accent: 44 47% 66%; /* #D6C08B */
+    --accent-foreground: 240 10% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 13% / 0.1;
+    --input: 0 0% 13% / 0.1;
+    --ring: 43 54% 48%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    
+    --sidebar-background: 218 30% 10%;
+    --sidebar-foreground: 40 12% 90%;
+    --sidebar-primary: 43 56% 54%;
+    --sidebar-primary-foreground: 216 21% 5%;
+    --sidebar-accent: 220 30% 14%;
+    --sidebar-accent-foreground: 43 56% 74%;
+    --sidebar-border: 218 30% 17%;
+    --sidebar-ring: 43 56% 54%;
+  }
+
+  .dark {
+    --background: 210 14% 5%; /* #0B0D10 near-black */
+    --foreground: 38 13% 95%; /* #F2F2EF */
+    --card: 214 28% 10%; /* #121722 */
+    --card-foreground: 38 13% 95%;
+    --popover: 214 28% 10%;
+    --popover-foreground: 38 13% 95%;
+    --primary: 43 56% 54%; /* #C9A24A Gold/Brass */
+    --primary-foreground: 216 21% 5%;
+    --secondary: 216 27% 12%; /* #161C28 */
+    --secondary-foreground: 38 13% 95%;
+    --muted: 38 13% 95% / 0.72;
+    --muted-foreground: 38 13% 95% / 0.72;
+    --accent: 44 57% 77%; /* #E3D4A6 Champagne */
+    --accent-foreground: 216 21% 5%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 38 13% 95%;
+    --border: 0 0% 100% / 0.08;
+    --input: 0 0% 100% / 0.08;
+    --ring: 43 56% 54%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    
+    --sidebar-background: 214 28% 10%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 43 56% 54%;
+    --sidebar-primary-foreground: 220 13% 6%;
+    --sidebar-accent: 216 27% 12%;
+    --sidebar-accent-foreground: 43 56% 66%;
+    --sidebar-border: 0 0% 100% / 0.08;
+    --sidebar-ring: 43 56% 54%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body.admin-body {
+    overflow-y: hidden;
+  }
+  
+  .dark body:not(.admin-body) {
+      background-image: radial-gradient(circle at 50% 50%, hsl(210, 23%, 8%) 0%, hsl(var(--background)) 100%);
+  }
+
+  body:not(.admin-body)::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJub2lzZSI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGUmVxdWVuY3k9IjAuODUiIG51bU9jdGF2ZXM9IjEwIiBzdGl0Y2hUaWxlcz0ic3RpdGNoIiAvPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAuMTUgMCIgLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWx0ZXI9InVybCgjbnoaXNlKSIgb3BhY2l0eT0iMSIgLz48L3N2Zz4=');
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .dark body:not(.admin-body)::after {
+    opacity: 0.05;
+  }
+}
+
+@layer utilities {
+  .section-padding {
+    @apply px-6 py-16 md:px-10 md:py-24 lg:py-32;
+  }
+
+  .container-max {
+    @apply max-w-7xl mx-auto;
+  }
+
+  .h1-headline {
+    @apply font-headline text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight;
+  }
+  .h2-headline {
+    @apply font-headline text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight;
+  }
+  .h3-headline {
+    @apply font-headline text-2xl md:text-3xl font-medium;
+  }
+}

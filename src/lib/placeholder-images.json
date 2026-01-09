@@ -1,0 +1,94 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-home",
+      "description": "A modern and elegant living room interior with custom furniture, showcasing the quality of CARVELLO's work.",
+      "imageUrl": "https://images.unsplash.com/photo-1631510390389-c1e4fb20ff31?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxtb2Rlcm4lMjBpbnRlcmlvcnxlbnwwfHx8fDE3NjczNTkwODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern interior"
+    },
+    {
+      "id": "about-1",
+      "description": "Detailed shot of a perfectly crafted wooden joint in a piece of custom furniture.",
+      "imageUrl": "https://images.unsplash.com/photo-1563729305006-0e477dac5e71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3b29kd29ya2luZyUyMGRldGFpbHxlbnwwfHx8fDE3Njc0NjAxNjB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woodworking detail"
+    },
+    {
+      "id": "about-2",
+      "description": "A craftsman carefully sanding a piece of wood in the CARVELLO workshop.",
+      "imageUrl": "https://images.unsplash.com/photo-1683115099119-1af60e697f9a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjcmFmdHNtYW4lMjB3b3Jrc2hvcHxlbnwwfHx8fDE3NjczNjY0NTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "craftsman workshop"
+    },
+    {
+      "id": "services-1",
+      "description": "A designer working on a 3D model of a kitchen on a large computer screen.",
+      "imageUrl": "https://images.unsplash.com/photo-1663811397091-9a13493eff11?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8M2QlMjBkZXNpZ24lMjBpbnRlcmlvcnxlbnwwfHx8fDE3Njc0NjAxNTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "3d design interior"
+    },
+    {
+      "id": "services-2",
+      "description": "A large CNC machine cutting a sheet of MDF with precision.",
+      "imageUrl": "https://images.unsplash.com/photo-1615378809683-6737a9e362f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjbmMlMjBtYWNoaW5lJTIwd29vZHxlbnwwfHx8fDE3Njc0NjAxNTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cnc machine wood"
+    },
+    {
+      "id": "services-3",
+      "description": "A professional painter in a spray booth applying a finish to a cabinet door.",
+      "imageUrl": "https://images.unsplash.com/photo-1610354650003-e57d0f4ec18f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmdXJuaXR1cmUlMjBwYWludGluZ3xlbnwwfHx8fDE3Njc0NjAxNjB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "furniture painting"
+    },
+    {
+      "id": "services-4",
+      "description": "Two installers fitting a custom wardrobe in a client's home.",
+      "imageUrl": "https://images.unsplash.com/photo-1759347137149-2ac7842782cc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxmdXJuaXR1cmUlMjBpbnN0YWxsYXRpb258ZW58MHx8fHwxNzY3NDYwMTYwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "furniture installation"
+    },
+    {
+      "id": "portfolio-1",
+      "description": "A bright, modern kitchen with white and wood-tone cabinets.",
+      "imageUrl": "https://images.unsplash.com/photo-1682888813913-e13f18692019?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxtb2Rlcm4lMjBraXRjaGVufGVufDB8fHx8MTc2NzM4NTc3OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern kitchen"
+    },
+    {
+      "id": "portfolio-2",
+      "description": "A floor-to-ceiling wardrobe with mirrored sliding doors.",
+      "imageUrl": "https://images.unsplash.com/photo-1649361811423-a55616f7ab11?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxsYXJnZSUyMHdhcmRyb2JlfGVufDB8fHx8MTc2NzQ2MDE1OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "large wardrobe"
+    },
+    {
+      "id": "portfolio-3",
+      "description": "A minimalist living room with a floating media console and shelving.",
+      "imageUrl": "https://images.unsplash.com/photo-1704428381312-0579346a779c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwbGl2aW5ncm9vbXxlbnwwfHx8fDE3Njc0NjAxNjB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "minimalist livingroom"
+    },
+    {
+      "id": "portfolio-4",
+      "description": "A large kitchen island with a solid oak countertop and bar seating.",
+      "imageUrl": "https://images.unsplash.com/photo-1721830800850-378fe5b17394?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxraXRjaGVuJTIwaXNsYW5kJTIwb2FrfGVufDB8fHx8MTc2NzQ2MDE2MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "kitchen island oak"
+    },
+    {
+      "id": "portfolio-5",
+      "description": "A compact, floating vanity in a modern bathroom.",
+      "imageUrl": "https://images.unsplash.com/photo-1564540579594-0930edb6de43?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxiYXRocm9vbSUyMHZhbml0eXxlbnwwfHx8fDE3Njc0MzMzNTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bathroom vanity"
+    },
+    {
+      "id": "portfolio-6",
+      "description": "A custom-built library wall with integrated lighting.",
+      "imageUrl": "https://images.unsplash.com/photo-1642428668784-43cdfca2813e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjdXN0b20lMjBsaWJyYXJ5fGVufDB8fHx8MTc2NzQ2MDE1OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "custom library"
+    },
+    {
+      "id": "portfolio-7",
+      "description": "A sleek bedroom with a floating bed frame that has LED lighting underneath.",
+      "imageUrl": "https://images.unsplash.com/photo-1585801295748-9297b9b587b1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxmbG9hdGluZyUyMGJlZHxlbnwwfHx8fDE3Njc0NjAxNTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "floating bed"
+    },
+    {
+      "id": "portfolio-8",
+      "description": "A home office setup with a custom-fit desk and storage.",
+      "imageUrl": "https://images.unsplash.com/photo-1600494603989-9650cf6ddd3d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxob21lJTIwb2ZmaWNlfGVufDB8fHx8MTc2NzQ1MTc1NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "home office"
+    }
+  ]
+}

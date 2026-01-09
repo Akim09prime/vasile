@@ -28,6 +28,7 @@ import { X, CheckCircle, Star } from "lucide-react"
 import { produce } from "immer"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
 
 const imagePlaceholderSchema = z.object({
   id: z.string(),
@@ -323,5 +324,7 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
     </Form>
   )
 }
+
+    
 
     

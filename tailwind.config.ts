@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['PT Sans', 'sans-serif'],
-        headline: ['Playfair Display', 'serif'],
+        body: ['var(--font-pt-sans)', 'sans-serif'],
+        headline: ['var(--font-playfair-display)', 'serif'],
         code: ['monospace'],
       },
       colors: {
@@ -48,6 +48,11 @@ export default {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        gold: {
+            DEFAULT: 'hsl(var(--gold))',
+            hover: 'hsl(var(--gold-hover))',
+            glow: 'hsl(var(--gold-glow))',
+        },
         chart: {
           '1': 'hsl(var(--chart-1))',
           '2': 'hsl(var(--chart-2))',

@@ -1,6 +1,7 @@
 
 import type { Metadata, Viewport } from "next";
 import { i18n, type Locale } from "@/lib/i18n-config";
+import { PT_Sans, Playfair_Display } from 'next/font/google'
 
 import "./globals.css";
 import Header from "@/components/layout/header";
@@ -10,6 +11,18 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeApplicator } from '@/components/ThemeApplicator';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+
+const ptSans = PT_Sans({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-pt-sans',
+})
+
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-playfair-display',
+})
 
 
 export async function generateStaticParams() {
@@ -24,7 +37,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
+    { media: "(prefers-color-scheme: light)", color: "black" },
     { media: "(prefers-color-scheme: dark)", color: "black" },
   ],
 };
@@ -41,28 +54,12 @@ export default async function RootLayout({
 
   return (
     <html lang={lang} suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="font-body antialiased" suppressHydrationWarning>
+      <body className={`${ptSans.variable} ${playfairDisplay.variable} font-body antialiased`} suppressHydrationWarning>
         <AuthProvider>
             <ThemeProvider
               attribute="class"
               defaultTheme="dark"
-              enableSystem
+              enableSystem={false}
               disableTransitionOnChange
             >
                 <ThemeApplicator />

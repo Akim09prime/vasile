@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { db } from '@/lib/firebase';
@@ -68,9 +67,8 @@ export async function getProjectsFromFirestore(params: { showUnpublished?: boole
                 publishedAt: publishedAt,
                 createdAt: createdAt,
                 coverMediaId: data.coverMediaId,
-                mediaIds: data.mediaIds || [],
+                media: data.media || [],
                 image: coverImage || null,
-                media: (data.mediaIds || []).map((id: string) => PlaceHolderImages.find(p=>p.id===id)).filter((i): i is ImagePlaceholder => !!i),
             } as Project;
         });
         
@@ -127,9 +125,8 @@ export async function getProjectById(id: string): Promise<Project | null> {
             publishedAt: data.publishedAt?.toDate?.().toISOString(),
             createdAt: data.createdAt.toDate().toISOString(),
             coverMediaId: data.coverMediaId,
-            mediaIds: data.mediaIds || [],
+            media: data.media || [],
             image: coverImage || null,
-            media: (data.mediaIds || []).map((id: string) => PlaceHolderImages.find(p=>p.id===id)).filter(Boolean) as ImagePlaceholder[],
         };
     } catch (error: any) {
         if (error.code === 'permission-denied') {
@@ -152,6 +149,7 @@ export async function createProject(projectData: ProjectData): Promise<string> {
 
     const fullData = {
         ...projectData,
+        media: projectData.media || [],
         rating: projectData.rating || 0,
         slug: generatedSlug,
         categorySlug,
@@ -174,6 +172,7 @@ export async function updateProject(id: string, projectData: Partial<ProjectData
     const currentData = docSnap.data();
     const updatePayload: any = {
         ...projectData,
+        media: projectData.media || [],
         rating: projectData.rating ?? currentData.rating ?? 0,
         slug: projectData.name ? slugify(projectData.name) : currentData.slug,
         updatedAt: serverTimestamp(),
@@ -240,12 +239,13 @@ export async function syncProjectSummary(projectId: string): Promise<void> {
       createdAt: projectSnap.data().createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
       coverMediaId: projectData.coverMediaId,
-      mediaIds: projectData.mediaIds || [],
+      media: projectData.media || [],
       image: coverImage ? {
           id: coverImage.id,
           imageUrl: coverImage.imageUrl,
           description: coverImage.description,
           imageHint: coverImage.imageHint,
+          rating: coverImage.rating,
       } : null,
     };
     

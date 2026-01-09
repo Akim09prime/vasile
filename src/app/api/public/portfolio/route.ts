@@ -1,9 +1,17 @@
+
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin.server';
-import type { Project } from '@/lib/types';
+import type { Project, ImagePlaceholder } from '@/lib/types';
 import type { Query, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import type { ImagePlaceholder } from '@/lib/placeholder-images';
+
+
+function findImage(id?: string): ImagePlaceholder | undefined {
+    if (!id) return undefined;
+    const placeholder = PlaceHolderImages.find(p => p.id === id);
+    if (!placeholder) return undefined;
+    return placeholder;
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,22 +26,32 @@ export async function GET() {
   }
   
   try {
-    const summariesRef = db.collection('project_summaries');
-    let q: Query = summariesRef.where('isPublished', '==', true);
+    // We now query the main `projects` collection
+    const projectsRef = db.collection('projects');
+    let q: Query = projectsRef.where('isPublished', '==', true);
     q = q.orderBy('publishedAt', 'desc').limit(50);
     
     const snapshot = await q.get();
 
     const items: Project[] = snapshot.docs.map((doc: QueryDocumentSnapshot) => {
       const data = doc.data();
-      const media = (data.mediaIds || []).map((id: string) => PlaceHolderImages.find(p => p.id === id)).filter((i): i is ImagePlaceholder => !!i);
+      
+      const coverImage = findImage(data.coverMediaId);
+       // Normalize media
+        const media: ImagePlaceholder[] = (data.media || []).map((m: any) => {
+            if (typeof m === 'string') {
+                return findImage(m);
+            }
+            return m;
+        }).filter(Boolean);
 
       return {
         ...data,
         id: doc.id,
-        media: media,
         createdAt: data.createdAt?.toDate?.().toISOString() || new Date().toISOString(),
         publishedAt: data.publishedAt?.toDate?.().toISOString() || new Date().toISOString(),
+        image: coverImage,
+        media: media,
       } as Project;
     });
     

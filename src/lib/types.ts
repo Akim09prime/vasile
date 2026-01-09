@@ -1,5 +1,4 @@
 
-
 export type NavItem = {
   id: string;
   type: "internal" | "external";
@@ -101,12 +100,11 @@ export type Project = {
     publishedAt?: string;
     createdAt: string;
     coverMediaId?: string;
-    mediaIds?: string[];
+    media: ImagePlaceholder[]; // Changed from mediaIds
     image?: ImagePlaceholder;
-    media?: ImagePlaceholder[];
 }
 
-export type ProjectData = Omit<Project, 'id' | 'createdAt' | 'publishedAt' | 'image' | 'media'>;
+export type ProjectData = Omit<Project, 'id' | 'createdAt' | 'publishedAt' | 'image' >;
 
 export type Lead = {
     id: string;
@@ -141,6 +139,7 @@ export type ImagePlaceholder = {
   description: string;
   imageUrl: string;
   imageHint: string;
+  rating?: number; // Added rating per image
 };
 
 export type GalleryImage = {

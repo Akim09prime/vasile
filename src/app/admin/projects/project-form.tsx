@@ -1,7 +1,8 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import type { Project, ProjectData, ProjectType } from "@/lib/types"
+import type { Project, ProjectData, ProjectType, ImagePlaceholder } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEffect, useState } from "react"
 import { getProjectTypes } from "@/lib/services/settings-service"
@@ -24,6 +25,16 @@ import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
 import { X, CheckCircle, Star } from "lucide-react"
+import { produce } from "immer"
+import { cn } from "@/lib/utils"
+
+const imagePlaceholderSchema = z.object({
+  id: z.string(),
+  description: z.string(),
+  imageUrl: z.string(),
+  imageHint: z.string(),
+  rating: z.number().min(0).max(5).optional().default(0),
+});
 
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters long."),
@@ -33,7 +44,7 @@ const formSchema = z.object({
   location: z.string().optional(),
   rating: z.coerce.number().min(0).max(5).default(0),
   coverMediaId: z.string().optional(),
-  mediaIds: z.array(z.string()).optional(),
+  media: z.array(imagePlaceholderSchema).optional().default([]),
   isPublished: z.boolean().default(false),
 })
 
@@ -66,7 +77,7 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
       location: project?.location || "",
       rating: project?.rating || 0,
       coverMediaId: project?.coverMediaId || "",
-      mediaIds: project?.mediaIds || [],
+      media: project?.media || [],
       isPublished: project?.isPublished || false,
     },
   })
@@ -78,17 +89,31 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
     onSubmit(values)
   }
-
-  const mediaIds = form.watch("mediaIds") || [];
+  
+  const selectedMedia = form.watch("media") || [];
   const coverMediaId = form.watch("coverMediaId");
 
-  const toggleMediaId = (id: string) => {
-    const currentIds = form.getValues("mediaIds") || [];
-    if (currentIds.includes(id)) {
-      form.setValue("mediaIds", currentIds.filter(mediaId => mediaId !== id));
+  const toggleMedia = (image: ImagePlaceholder) => {
+    const currentMedia = form.getValues("media") || [];
+    const existingIndex = currentMedia.findIndex(m => m.id === image.id);
+
+    if (existingIndex > -1) {
+      // Remove it
+      form.setValue("media", currentMedia.filter(m => m.id !== image.id));
     } else {
-      form.setValue("mediaIds", [...currentIds, id]);
+      // Add it with default rating
+      form.setValue("media", [...currentMedia, { ...image, rating: 0 }]);
     }
+  }
+  
+  const updateMediaRating = (imageId: string, rating: number) => {
+      const updatedMedia = produce(form.getValues("media"), draft => {
+          const item = draft.find(m => m.id === imageId);
+          if (item) {
+              item.rating = rating;
+          }
+      });
+      form.setValue("media", updatedMedia);
   }
 
   const setCoverId = (id: string) => {
@@ -156,7 +181,7 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
                         name="rating"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Rating</FormLabel>
+                            <FormLabel>Project Rating</FormLabel>
                             <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={String(field.value)}>
                                 <FormControl>
                                 <SelectTrigger>
@@ -203,7 +228,6 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
                 )}
                 />
                
-                {/* Cover Media Picker */}
                 <div className="space-y-4 rounded-lg border p-4">
                     <FormLabel>Cover Image</FormLabel>
                     <FormDescription>Select the main image for the project.</FormDescription>
@@ -227,28 +251,49 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
                     </div>
                 </div>
 
-
-                {/* Media Gallery Picker */}
                 <div className="space-y-4 rounded-lg border p-4">
                     <FormLabel>Project Media Gallery</FormLabel>
-                    <FormDescription>Select images to include in the project gallery.</FormDescription>
-                     <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-                        {PlaceHolderImages.map(image => (
-                            <div key={image.id} className="relative group cursor-pointer" onClick={() => toggleMediaId(image.id)}>
-                                <Image 
-                                    src={image.imageUrl} 
-                                    alt={image.description} 
-                                    width={100} 
-                                    height={100} 
-                                    className="object-cover w-full h-24 rounded-md border-2 border-transparent group-hover:border-primary"
-                                />
-                                {mediaIds.includes(image.id) && (
-                                    <div className="absolute inset-0 bg-primary/70 flex items-center justify-center rounded-md">
-                                        <CheckCircle className="h-8 w-8 text-white" />
+                    <FormDescription>Select images to include in the project gallery and set their ratings.</FormDescription>
+                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {PlaceHolderImages.map(image => {
+                            const isSelected = selectedMedia.some(m => m.id === image.id);
+                            const selectedImage = selectedMedia.find(m => m.id === image.id);
+                            return (
+                                <div key={image.id} className={cn("relative group cursor-pointer border-2 rounded-lg overflow-hidden", isSelected ? "border-primary" : "border-transparent")}>
+                                    <div onClick={() => toggleMedia(image)}>
+                                        <Image 
+                                            src={image.imageUrl} 
+                                            alt={image.description} 
+                                            width={150} 
+                                            height={150} 
+                                            className="object-cover w-full h-28"
+                                        />
+                                        {isSelected && (
+                                            <div className="absolute inset-0 bg-primary/70 flex items-center justify-center">
+                                                <CheckCircle className="h-8 w-8 text-white" />
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                        ))}
+                                    {isSelected && (
+                                        <div className="p-2 bg-secondary">
+                                            <Label className="text-xs mb-1 block">Rating</Label>
+                                            <Select onValueChange={(value) => updateMediaRating(image.id, parseInt(value))} defaultValue={String(selectedImage?.rating || 0)}>
+                                                <SelectTrigger className="h-8 text-xs">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {[0, 1, 2, 3, 4, 5].map(rate => (
+                                                         <SelectItem key={rate} value={String(rate)}>
+                                                            <span className="flex items-center gap-1">{rate} <Star className="h-3 w-3 text-yellow-400" fill="currentColor"/></span>
+                                                         </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
 

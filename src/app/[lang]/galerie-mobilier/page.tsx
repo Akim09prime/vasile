@@ -1,10 +1,11 @@
+
 'use client';
 
 import * as React from 'react';
 import Image from 'next/image';
 import { getGalleryPageData } from '@/lib/services/page-service';
 import { PageHeader } from '@/components/layout/page-header';
-import type { GalleryImage, Project } from '@/lib/types';
+import type { GalleryImage, Project, ImagePlaceholder } from '@/lib/types';
 import { Loader, AlertCircle, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -32,19 +33,20 @@ export default function GalleryPage() {
                 if (!data.ok) throw new Error(data.error || 'Failed to fetch projects');
 
                 const projects: Project[] = data.items;
-                const topRatedProjects = projects.filter(p => p.rating === 5);
                 
-                const galleryImages: GalleryImage[] = topRatedProjects.flatMap(project =>
-                    (project.media || []).map(img => ({
-                        id: `${project.id}-${img.id}`,
-                        projectId: project.id,
-                        projectSlug: project.slug,
-                        category: project.category || 'Uncategorized',
-                        image: img,
-                    }))
+                const topRatedImages: GalleryImage[] = projects.flatMap(project =>
+                    (project.media || [])
+                        .filter(img => img.rating === 5)
+                        .map(img => ({
+                            id: `${project.id}-${img.id}`,
+                            projectId: project.id,
+                            projectSlug: project.slug,
+                            category: project.category || 'Uncategorized',
+                            image: img,
+                        }))
                 );
                 
-                setImages(galleryImages);
+                setImages(topRatedImages);
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -83,7 +85,7 @@ export default function GalleryPage() {
                 ) : images.length === 0 ? (
                     <div className="text-center py-16">
                         <h3 className="text-xl font-semibold">Nicio imagine de top</h3>
-                        <p className="text-muted-foreground mt-2">Momentan nu există proiecte cotate cu 5 stele. Reveniți mai târziu.</p>
+                        <p className="text-muted-foreground mt-2">Momentan nu există imagini cotate cu 5 stele. Reveniți mai târziu.</p>
                     </div>
                 ) : (
                     <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">

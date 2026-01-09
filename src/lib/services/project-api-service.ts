@@ -4,7 +4,7 @@ import 'server-only';
 
 import type { Project, ProjectSummary } from '@/lib/types';
 import { getServerDb } from '@/lib/firebase-server-client';
-import { collection, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, limit, collectionGroup } from 'firebase/firestore';
 import { PlaceHolderImages } from '../placeholder-images';
 
 /**
@@ -51,10 +51,12 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
     // --- Primary Source: project_summaries ---
     try {
         console.log("[getPublicProjects] Attempting to fetch from source: project_summaries");
+        // FIX: Use collection() for a root collection, not collectionGroup()
         const summariesRef = collection(db, 'project_summaries');
         const q = query(
             summariesRef, 
             where("isPublished", "==", true),
+            orderBy("completedAt", "desc"),
             limit(limitCount)
         );
         const snapshot = await getDocs(q);
@@ -123,7 +125,7 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
  */
 export async function getProjectsFromApi(): Promise<ProjectSummary[]> {
     // Note: Using getPublicProjects() is preferred over this fetch-based approach in Server Components.
-    const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/public/portfolio`;
+    const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/public/portfolio`;
 
     try {
         const res = await fetch(apiUrl, { cache: 'no-store' });

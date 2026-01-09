@@ -51,10 +51,10 @@ export default {
         
         // Cinematic Design Tokens (for direct use if needed)
         'cinematic-bg': 'hsl(var(--background))',
-        'surface': 'hsl(var(--card))',
-        'text': 'hsl(var(--foreground))',
+        surface: 'hsl(var(--card))',
+        'cinematic-text': 'hsl(var(--foreground))',
         'cinematic-muted': 'hsl(var(--muted))',
-        'gold': 'hsl(var(--primary))',
+        gold: 'hsl(var(--primary))',
         'gold-highlight': 'hsl(var(--accent))',
         'cinematic-border': 'hsl(var(--border))',
       },

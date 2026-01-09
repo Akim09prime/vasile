@@ -1,39 +1,35 @@
 
+import 'server-only';
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin.server';
 import type { ProjectSummary } from '@/lib/types';
-import type { Query } from 'firebase-admin/firestore';
+import { collection, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
+import { getServerDb } from '@/lib/firebase-server-client';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
-// This API endpoint serves the public portfolio data.
-// It's used by client-side components if needed, but Server Components can query Firestore directly.
+// Revalidate this route every 5 minutes
+export const revalidate = 300; 
 
 export async function GET(request: Request) {
-  const { db, info: adminInfo } = getAdminDb();
-  
-  if (!db) {
-      return NextResponse.json({ ok: false, error: "Admin SDK not initialized.", code: "ADMIN_DB_FAIL" }, { status: 500 });
-  }
-
   try {
-    const summariesRef = db.collection('project_summaries');
+    const db = getServerDb();
+    const summariesRef = collection(db, 'project_summaries');
     
-    // This query requires a composite index.
-    const q: Query = summariesRef
-        .where('isPublished', '==', true)
-        .orderBy('completedAt', 'desc')
-        .orderBy('publishedAt', 'desc')
-        .orderBy('createdAt', 'desc');
+    // Minimal Firestore query to avoid complex indexes.
+    // This query requires a composite index on (isPublished: Asc, completedAt: Desc)
+    const q = query(
+        summariesRef, 
+        where("isPublished", "==", true),
+        orderBy("completedAt", "desc"),
+        limit(200) // Safety limit
+    );
 
-    const snapshot = await q.get();
-    
+    const snapshot = await getDocs(q);
+
     if (snapshot.empty) {
-      return NextResponse.json({ ok: true, items: [] });
+        return NextResponse.json({ ok: true, items: [] });
     }
 
-    const items: ProjectSummary[] = snapshot.docs.map(doc => {
+    let projects = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
             id: doc.id,
@@ -51,18 +47,30 @@ export async function GET(request: Request) {
         } as ProjectSummary;
     });
 
-    return NextResponse.json({ ok: true, items });
+    // In-code fallback sorting to ensure a stable, predictable order.
+    // This avoids adding more orderBy clauses to the Firestore query.
+    projects.sort((a, b) => {
+        const dateA = new Date(a.completedAt || a.publishedAt || a.createdAt || 0).getTime();
+        const dateB = new Date(b.completedAt || b.publishedAt || b.createdAt || 0).getTime();
+        return dateB - dateA;
+    });
+
+    return NextResponse.json({ ok: true, items: projects });
 
   } catch (error: any) {
-    console.error('[API/public/portfolio] Firestore query failed:', error);
-    if (error.code === 5) { // 'FAILED_PRECONDITION' for missing index in Admin SDK
-         return NextResponse.json({ 
-             ok: false, 
-             error: "Firestore query failed. This is likely due to a missing composite index.",
-             details: "Create an index on 'project_summaries' with fields: isPublished (asc), completedAt (desc), publishedAt (desc), createdAt (desc).",
-             code: "MISSING_INDEX"
-        }, { status: 500 });
-    }
-    return NextResponse.json({ ok: false, error: error.message, code: error.code }, { status: 500 });
+    console.error(`[API/public/portfolio] Firestore query failed:`, error);
+
+    const isIndexError = error.code === 'failed-precondition';
+    const errorMessage = isIndexError 
+      ? `Query failed. A composite index is required in Firestore. Please create it. Details: ${error.message}`
+      : `Failed to fetch public projects. Details: ${error.message}`;
+
+    return NextResponse.json({
+        ok: false,
+        error: errorMessage,
+        code: error.code || 'UNKNOWN_ERROR',
+      },
+      { status: 500 }
+    );
   }
 }

@@ -11,16 +11,10 @@ rules_version = '2';
 // 1. Collection: 'projects', Fields: [isPublished: Ascending, createdAt: Descending]
 //    Purpose: Used by admins to fetch all projects, sorted by creation date.
 //
-// 2. Collection: 'projects', Fields: [categorySlug: Ascending, isPublished: Ascending, createdAt: Descending]
-//    Purpose: Used by admins to fetch projects within a specific category, sorted by creation date.
+// 2. Collection: 'project_summaries', Fields: [isPublished: Ascending, publishedAt: Descending]
+//    Purpose: Legacy. Used by older versions of the public API. Can be removed if API is stable.
 //
-// 3. Collection: 'project_summaries', Fields: [isPublished: Ascending, publishedAt: Descending]
-//    Purpose: Used by the public API to fetch all published project summaries, sorted by publication date.
-//
-// 4. Collection: 'project_summaries', Fields: [categorySlug: Ascending, isPublished: Ascending, publishedAt: Descending]
-//    Purpose: Used by the public API to fetch published summaries in a category, sorted by publication date.
-//
-// 5. Collection: 'project_summaries', Fields: [isPublished: Ascending, completedAt: Descending]
+// 3. Collection: 'project_summaries', Fields: [isPublished: Ascending, completedAt: Descending]
 //    Purpose: New. For the public portfolio timeline. Fetch published projects sorted by completion date.
 //
 

@@ -1,5 +1,6 @@
 
 
+
 export type NavItem = {
   id: string;
   type: "internal" | "external";
@@ -96,7 +97,6 @@ export type Project = {
     summary?: string;
     content?: string;
     location?: string;
-    rating?: number;
     isPublished: boolean;
     publishedAt?: string;
     createdAt: string;
@@ -128,7 +128,7 @@ export type ContactMessage = {
     email: string;
     subject: string;
     message: string;
-    isRead: boolean;
+isRead: boolean;
     createdAt: string;
 };
 
@@ -153,3 +153,5 @@ export type GalleryImage = {
     image: ImagePlaceholder;
     publishedAt?: string;
 }
+
+    

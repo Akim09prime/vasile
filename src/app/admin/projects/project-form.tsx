@@ -44,7 +44,6 @@ const formSchema = z.object({
   summary: z.string().optional(),
   content: z.string().optional(),
   location: z.string().optional(),
-  rating: z.coerce.number().min(0).max(5).default(0),
   coverMediaId: z.string().optional(),
   media: z.array(imagePlaceholderSchema).optional().default([]),
   isPublished: z.boolean().default(false),
@@ -77,7 +76,6 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
       summary: project?.summary || "",
       content: project?.content || "",
       location: project?.location || "",
-      rating: project?.rating || 0,
       coverMediaId: project?.coverMediaId || "",
       media: project?.media || [],
       isPublished: project?.isPublished || false,
@@ -185,30 +183,6 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
                             <FormControl>
                                 <Input placeholder="Bucharest" {...field} />
                             </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                     <FormField
-                        control={form.control}
-                        name="rating"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Project Rating (Overall)</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={String(field.value)}>
-                                <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a rating" />
-                                </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {[0, 1, 2, 3, 4, 5].map(rate => (
-                                         <SelectItem key={rate} value={String(rate)}>
-                                            <span className="flex items-center">{rate} <Star className="ml-1 h-4 w-4 text-yellow-400" fill="currentColor"/></span>
-                                         </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
                             <FormMessage />
                             </FormItem>
                         )}
@@ -349,3 +323,5 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
     </Form>
   )
 }
+
+    

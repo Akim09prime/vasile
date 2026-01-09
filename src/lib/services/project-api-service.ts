@@ -31,7 +31,7 @@ function mapProjectToSummary(projectDoc: Project): ProjectSummary {
 /**
  * Sorts an array of projects by completion date, with fallbacks.
  */
-function sortProjectsByCompletionDate(projects: ProjectSummary[]): ProjectSummary[] {
+function sortProjectsByDate(projects: ProjectSummary[]): ProjectSummary[] {
     return projects.sort((a, b) => {
         const dateA = new Date(a.completedAt || a.publishedAt || a.createdAt || 0).getTime();
         const dateB = new Date(b.completedAt || b.publishedAt || b.createdAt || 0).getTime();
@@ -55,15 +55,14 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
         const q = query(
             summariesRef, 
             where("isPublished", "==", true),
-            orderBy("completedAt", "desc"),
             limit(limitCount)
         );
         const snapshot = await getDocs(q);
 
         if (!snapshot.empty) {
-            console.log(`[getPublicProjects] Success! Found ${snapshot.size} documents in project_summaries.`);
+            console.log(`[getPublicProjects] Source: project_summaries. Found ${snapshot.size} documents.`);
             const projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectSummary));
-            return sortProjectsByCompletionDate(projects);
+            return sortProjectsByDate(projects);
         }
         console.log("[getPublicProjects] project_summaries is empty. Proceeding to fallback.");
     } catch (error: any) {
@@ -86,7 +85,7 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
             return [];
         }
 
-        console.log(`[getPublicProjects] Success! Found ${snapshot.size} documents in fallback source 'projects'.`);
+        console.log(`[getPublicProjects] Source: projects_fallback. Found ${snapshot.size} documents.`);
         const projects = snapshot.docs.map(doc => {
             const data = doc.data();
             const project: Project = {
@@ -108,7 +107,7 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
             return mapProjectToSummary(project);
         });
 
-        return sortProjectsByCompletionDate(projects);
+        return sortProjectsByDate(projects);
 
     } catch (error: any) {
         console.error('[getPublicProjects] FATAL: Fallback query on "projects" collection failed.', error);

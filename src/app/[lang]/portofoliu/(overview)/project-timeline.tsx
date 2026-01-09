@@ -93,7 +93,7 @@ export function ProjectTimeline({
             animate="show"
         >
           <div
-            className="absolute left-4 md:left-1/2 w-0.5 h-full bg-border -translate-x-1/2"
+            className="absolute left-4 md:left-1/2 w-0.5 h-full bg-border -translate-x-1/2 -z-10"
             aria-hidden="true"
           />
           {sortedYears.map((year, yearIndex) => (
@@ -102,8 +102,8 @@ export function ProjectTimeline({
                 variants={fadeUp}
                 className="relative flex items-center justify-start md:justify-center mb-8"
               >
-                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-primary ring-8 ring-background" />
-                <h2 className="pl-12 md:pl-0 md:text-center text-2xl font-headline text-primary bg-background pr-4">
+                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-primary ring-8 ring-background z-10" />
+                <h2 className="pl-12 md:pl-0 md:text-center text-2xl font-headline text-primary bg-background pr-4 relative z-10">
                   {year}
                 </h2>
               </motion.div>

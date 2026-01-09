@@ -98,37 +98,40 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
   const toggleMedia = (image: ImagePlaceholder) => {
     const currentMedia = form.getValues("media") || [];
     const existingIndex = currentMedia.findIndex(m => m.id === image.id);
+    let updatedMedia;
 
     if (existingIndex > -1) {
-      // Remove it
-      form.setValue("media", currentMedia.filter(m => m.id !== image.id));
+      updatedMedia = currentMedia.filter(m => m.id !== image.id);
     } else {
-      // Add it with default rating and isTop
-      form.setValue("media", [...currentMedia, { ...image, rating: 0, isTop: false }]);
+      updatedMedia = [...currentMedia, { ...image, rating: 0, isTop: false }];
     }
+    form.setValue("media", updatedMedia, { shouldDirty: true });
   }
-  
-  const updateMediaRating = (imageId: string, rating: number) => {
-      const currentMedia = form.getValues("media");
-      const updatedMedia = currentMedia.map(item => 
-        item.id === imageId ? { ...item, rating: rating, isTop: rating === 5 } : item
-      );
-      form.setValue("media", updatedMedia, { shouldDirty: true });
-  }
-  
-  const toggleMediaIsTop = (imageId: string) => {
-      const currentMedia = form.getValues("media");
+
+  const updateMediaProperty = (imageId: string, property: 'rating' | 'isTop', value: any) => {
+      const currentMedia = form.getValues("media") || [];
       const updatedMedia = currentMedia.map(item => {
-        if (item.id === imageId) {
-            const newIsTop = !item.isTop;
-            return { ...item, isTop: newIsTop, rating: newIsTop ? 5 : item.rating === 5 ? 0 : item.rating };
-        }
-        return item;
+          if (item.id === imageId) {
+              const newItem = { ...item };
+              if (property === 'rating') {
+                  newItem.rating = value;
+                  newItem.isTop = value === 5; // Also mark as top if rating is 5
+              } else if (property === 'isTop') {
+                  newItem.isTop = value;
+                  // If marking as top, set rating to 5. If unmarking, don't change rating unless it was 5.
+                  if (value === true) {
+                      newItem.rating = 5;
+                  } else if (value === false && newItem.rating === 5) {
+                      newItem.rating = 0; // Or keep it, based on desired UX. Resetting is cleaner.
+                  }
+              }
+              return newItem;
+          }
+          return item;
       });
       form.setValue("media", updatedMedia, { shouldDirty: true });
-  }
-
-
+  };
+  
   const setCoverId = (id: string) => {
     form.setValue("coverMediaId", id);
   }
@@ -270,7 +273,7 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
                                         <div className="p-2 bg-secondary/50 space-y-2">
                                             <div className="flex flex-col gap-1">
                                                 <Label className="text-xs">Image Rating</Label>
-                                                <Select onValueChange={(value) => updateMediaRating(image.id, parseInt(value))} defaultValue={String(selectedImage?.rating || 0)}>
+                                                <Select onValueChange={(value) => updateMediaProperty(image.id, 'rating', parseInt(value))} defaultValue={String(selectedImage?.rating || 0)}>
                                                     <SelectTrigger className="h-8 text-xs">
                                                         <SelectValue />
                                                     </SelectTrigger>
@@ -283,7 +286,7 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            <Button size="sm" variant={selectedImage.isTop ? 'secondary' : 'outline'} className="w-full h-8 text-xs" onClick={() => toggleMediaIsTop(image.id)}>
+                                            <Button size="sm" variant={selectedImage.isTop ? 'secondary' : 'outline'} className="w-full h-8 text-xs" onClick={() => updateMediaProperty(image.id, 'isTop', !selectedImage.isTop)}>
                                                 <Star className="mr-1 h-3 w-3" /> {selectedImage.isTop ? 'Unmark Top' : 'Mark as Top'}
                                             </Button>
                                         </div>
@@ -325,5 +328,3 @@ export function ProjectForm({ onSubmit, project, onClose }: ProjectFormProps) {
     </Form>
   )
 }
-
-    

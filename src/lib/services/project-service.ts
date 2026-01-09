@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { db } from '@/lib/firebase';
@@ -234,18 +235,21 @@ export async function syncProjectSummary(projectId: string): Promise<void> {
       createdAt: projectSnap.data().createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
       coverMediaId: projectData.coverMediaId,
-      media: projectData.media || [],
+      media: (projectData.media || []).map(m => ({ // Sanitize media array for summary
+          id: m.id,
+          imageUrl: m.imageUrl,
+          description: m.description,
+          imageHint: m.imageHint,
+          rating: m.rating || 0,
+          isTop: m.isTop || false,
+      })),
       image: coverImage ? {
           id: coverImage.id,
           imageUrl: coverImage.imageUrl,
           description: coverImage.description,
           imageHint: coverImage.imageHint,
-          rating: coverImage.rating,
-          isTop: coverImage.isTop,
       } : null,
     };
     
     await setDoc(summaryRef, summaryPayload, { merge: true });
 }
-
-    

@@ -1,73 +1,73 @@
 
 import 'server-only';
 import { NextResponse, type NextRequest } from "next/server";
-import { getAdminDb } from '@/lib/firebase-admin.server';
-import type { DocumentData } from 'firebase-admin/firestore';
+import { getAdminDb } from "@/lib/firebase-admin.server";
+import { DocumentData } from 'firebase-admin/firestore';
+import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+function findImage(id?: string): ImagePlaceholder | null {
+    if (!id) return null;
+    return PlaceHolderImages.find(p => p.id === id) || null;
+}
 
 export async function GET(request: NextRequest, { params }: { params: { slug: string }}) {
     const { slug } = params;
     
     if (!slug) {
-        return NextResponse.json({ ok: false, error: "Project slug or ID is required." }, { status: 400 });
+        return NextResponse.json({ ok: false, error: "Project slug is required." }, { status: 400 });
     }
 
     const { db, info } = getAdminDb();
-
-    if (!db || info.mode === 'none') {
-        return NextResponse.json(
-            { ok: false, error: 'Admin SDK not initialized.', adminInfo: info },
-            { status: 500 }
-        );
+    if (!db) {
+        return NextResponse.json({ ok: false, error: 'Admin SDK not available.', adminInfo: info }, { status: 500 });
     }
+
+    let docSnap: DocumentData | null = null;
     
     try {
-        let projectDoc: DocumentData | null = null;
-        let docId: string | null = null;
-
-        // Strategy 1: Assume slug is the document ID and try to get it directly.
-        const docRefById = db.collection('projects').doc(slug);
-        const docSnapById = await docRefById.get();
-        
-        if (docSnapById.exists && docSnapById.data()?.isPublished) {
-            projectDoc = docSnapById.data() as DocumentData;
-            docId = docSnapById.id;
+        // Strategy 1: Attempt to get by doc ID directly (slug might be the ID)
+        const docByIdRef = db.collection('project_summaries').doc(slug);
+        const docByIdSnap = await docByIdRef.get();
+        if (docByIdSnap.exists) {
+            docSnap = docByIdSnap;
         } else {
-            // Strategy 2: If not found by ID, query by the 'slug' field.
-            const queryBySlug = db.collection('projects').where('slug', '==', slug).where('isPublished', '==', true).limit(1);
+            // Strategy 2: Query by the 'slug' field
+            const queryBySlug = db.collection('project_summaries').where('slug', '==', slug).limit(1);
             const querySnap = await queryBySlug.get();
             if (!querySnap.empty) {
-                const doc = querySnap.docs[0];
-                projectDoc = doc.data();
-                docId = doc.id;
+                docSnap = querySnap.docs[0];
             }
         }
 
-        if (!projectDoc || !docId) {
+        if (!docSnap) {
             return NextResponse.json({ ok: false, error: "not-found" }, { status: 404 });
         }
         
-        // Convert Timestamps to ISO strings for serialization
-        const serializedItem = Object.fromEntries(
-            Object.entries(projectDoc).map(([key, value]) => {
-                if (value && typeof value.toDate === 'function') {
-                    return [key, value.toDate().toISOString()];
-                }
-                return [key, value];
-            })
-        );
-        
-        const finalItem = {
-            id: docId,
-            ...serializedItem
+        const data = docSnap.data();
+        if (!data) {
+             return NextResponse.json({ ok: false, error: "not-found" }, { status: 404 });
         }
-        
-        return NextResponse.json({ ok: true, item: finalItem });
 
+        // Reconstruct the full project object, resolving media IDs
+        const item = {
+            id: docSnap.id,
+            ...data,
+            // Ensure timestamps are ISO strings, which is what client expects
+            createdAt: data.createdAt?.toDate?.().toISOString() || null,
+            publishedAt: data.publishedAt?.toDate?.().toISOString() || null,
+            completedAt: data.completedAt?.toDate?.().toISOString() || null,
+            // Resolve image objects from IDs
+            image: findImage(data.coverMediaId),
+            media: Array.isArray(data.media) ? data.media.map((m: any) => findImage(m.id)).filter(Boolean) : [],
+        };
+        
+        return NextResponse.json({ ok: true, item });
+        
     } catch (error: any) {
-        console.error(`[API] Error in /api/public/portfolio/${slug}:`, error);
-        return NextResponse.json({ ok: false, error: error.message, code: error.code }, { status: 500 });
+        console.error(`[API/public/portfolio/${slug}] Error:`, error);
+        return NextResponse.json({ ok: false, error: 'Internal server error', code: error.code }, { status: 500 });
     }
 }

@@ -1,5 +1,3 @@
-curl -sS http://localhost:9000/api/public/portfolio/vila-brasov | head -c 1200 && echo
-
 # Firebase Studio
 
 This is a NextJS starter in Firebase Studio.

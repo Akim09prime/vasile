@@ -1,72 +1,24 @@
+# Firebase Studio
 
-import * as React from 'react';
-import { getPortfolioPageData } from '@/lib/services/page-service';
-import { getProjectTypes } from '@/lib/services/settings-service';
-import { PageHeader } from '@/components/layout/page-header';
-import { Locale } from '@/lib/i18n-config';
-import { Terminal } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getPublicProjects } from '@/lib/services/project-api-service';
-import { ProjectTimeline } from './project-timeline';
+This is a NextJS starter in Firebase Studio.
 
-async function loadPortfolioData() {
-    try {
-        const [categories, projects] = await Promise.all([
-            getProjectTypes(),
-            getPublicProjects(),
-        ]);
-        const activeCategories = categories.filter(c => c.active);
-        return { categories: activeCategories, projects, error: null };
-    } catch (error: any) {
-        console.error('[PortfolioPage] Failed to load data:', error);
-        return { categories: [], projects: [], error: error.message || 'A apărut o eroare la încărcarea datelor.' };
-    }
-}
+To get started, take a look at src/app/page.tsx.
 
-export default async function PortfolioPage({ params }: { params: { lang: Locale }}) {
-    const { lang } = params;
-    const portfolioPageData = getPortfolioPageData();
-    const { categories, projects, error } = await loadPortfolioData();
+## Environment Variables
 
-    if (!portfolioPageData) {
-        return (
-             <div className="container-max section-padding">
-                <Alert variant="destructive">
-                    <AlertTitle>Eroare de configurare</AlertTitle>
-                    <AlertDescription>Nu s-au putut încărca datele statice ale paginii de portofoliu.</AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
-    
-    const { intro } = portfolioPageData;
-    
-    return (
-        <>
-            <PageHeader
-                badge={intro.badge}
-                title={intro.title}
-                description={intro.description}
-            />
+This project uses environment variables to configure the Firebase connection.
 
-            <section className="section-padding container-max">
-                {error ? (
-                     <Alert variant="destructive" className="max-w-xl mx-auto">
-                        <Terminal className="h-4 w-4" />
-                        <AlertTitle>Eroare la încărcarea Portofoliului</AlertTitle>
-                        <AlertDescription>
-                            <p className="font-mono text-xs mb-4 break-all whitespace-pre-wrap">{error}</p>
-                            <p className="text-sm mt-2">Acest lucru se poate întâmpla dacă un index compozit necesar în Firestore nu a fost creat sau dacă API-ul nu poate fi accesat.</p>
-                        </AlertDescription>
-                    </Alert>
-                ) : (
-                    <ProjectTimeline
-                        lang={lang}
-                        initialProjects={projects}
-                        categories={categories}
-                    />
-                )}
-            </section>
-        </>
-    );
-}
+1.  Create a file named `.env` in the root of the project.
+2.  Add your Firebase configuration keys to this file, prefixed with `NEXT_PUBLIC_`. For example:
+
+    ```
+    NEXT_PUBLIC_FIREBASE_API_KEY=AIza...
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+    # ... and so on for all required Firebase config keys.
+    ```
+
+3.  **Important**: After creating or modifying the `.env` file, you must **restart the development server** for the changes to take effect.
+
+## Local Development
+
+The development server runs on port **9002**. You can access it at `http://localhost:9002`.

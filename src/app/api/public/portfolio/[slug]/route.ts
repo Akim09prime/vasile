@@ -1,96 +1,80 @@
 
 import { NextResponse, type NextRequest } from "next/server";
-import { getAdminDb } from "@/lib/firebase-admin.server";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-import type { Project } from "@/lib/types";
+import { doc, getDoc } from "firebase/firestore";
+import { getServerDb } from "@/lib/firebase-server-client";
+import type { Project, ImagePlaceholder } from "@/lib/types";
 
-export const runtime = 'nodejs';
+// Ensures the component is treated as a dynamic route
 export const dynamic = 'force-dynamic';
 
-async function getProjectBySlug(slug: string): Promise<Project | null> {
-    const { db } = getAdminDb();
-    if (!db) {
-        console.error("[API/PortfolioDetail] Admin DB not initialized.");
-        return null;
+
+function normalizeDate(date: any): string | null {
+    if (!date) return null;
+    if (typeof date.toDate === 'function') { // Firebase Timestamp
+        return date.toDate().toISOString();
     }
-    
-    const projectsRef = db.collection('projects');
-    // First, try to query by the slug field
-    const snapshotBySlug = await projectsRef.where('slug', '==', slug).limit(1).get();
-
-    let doc;
-
-    if (!snapshotBySlug.empty) {
-        doc = snapshotBySlug.docs[0];
-    } else {
-        // If not found by slug, maybe the slug is actually a document ID
-        const docById = await projectsRef.doc(slug).get();
-        if (docById.exists) {
-            doc = docById;
-        } else {
-            return null; // Not found by slug or ID
-        }
+    const d = new Date(date);
+    if (!isNaN(d.getTime())) {
+        return d.toISOString();
     }
-    
-    const data = doc.data();
-    if (!data || !data.isPublished) {
-        return null;
-    }
-
-    // Resolve images and convert timestamps
-    const coverImage = PlaceHolderImages.find(img => img.id === data.coverMediaId);
-    
-    let media = [];
-    if (data.media && Array.isArray(data.media)) {
-        media = data.media.map((item: any) => {
-            const fullImage = PlaceHolderImages.find(p_img => p_img.id === item.id);
-            return fullImage ? { ...item, ...fullImage } : item;
-        });
-    }
-
-    const projectData: Project = {
-        id: doc.id,
-        name: data.name,
-        slug: data.slug || slug,
-        category: data.category,
-        categorySlug: data.categorySlug,
-        summary: data.summary,
-        content: data.content,
-        location: data.location,
-        isPublished: data.isPublished,
-        publishedAt: data.publishedAt?.toDate?.().toISOString() || null,
-        completedAt: data.completedAt?.toDate?.().toISOString() || null,
-        createdAt: data.createdAt?.toDate?.().toISOString() || null,
-        coverMediaId: data.coverMediaId,
-        media: media,
-        image: coverImage || null,
-    };
-
-    return projectData;
+    return null;
 }
 
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { slug: string }}) {
     const { slug } = params;
 
     if (!slug) {
-        return NextResponse.json({ ok: false, error: "slug_required" }, { status: 400 });
+        return NextResponse.json({ ok: false, error: "Project slug is required." }, { status: 400 });
     }
 
     try {
-        const project = await getProjectBySlug(slug);
+        const db = getServerDb();
+        // The document ID in 'project_summaries' is the same as in 'projects'
+        // We fetch from 'projects' to get the full 'content' field.
+        const docRef = doc(db, "projects", slug);
+        const docSnap = await getDoc(docRef);
 
-        if (!project) {
-            return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+        if (!docSnap.exists()) {
+             return NextResponse.json({
+                ok: false,
+                error: 'not_found',
+                message: `Project with slug/id '${slug}' not found.`
+            }, { status: 404 });
+        }
+        
+        const data = docSnap.data();
+
+        // Ensure the project is published before returning it
+        if (data.isPublished !== true) {
+             return NextResponse.json({
+                ok: false,
+                error: 'not_published',
+                message: `Project with slug '${slug}' is not published.`
+            }, { status: 403 });
         }
 
-        return NextResponse.json({ ok: true, item: project }, { status: 200 });
+        const item: Project = {
+            id: docSnap.id,
+            name: data.name,
+            slug: data.slug,
+            category: data.category,
+            summary: data.summary,
+            content: data.content, // Include the detailed content
+            location: data.location,
+            isPublished: data.isPublished,
+            publishedAt: normalizeDate(data.publishedAt),
+            completedAt: normalizeDate(data.completedAt),
+            createdAt: normalizeDate(data.createdAt),
+            coverMediaId: data.coverMediaId,
+            media: data.media || [],
+            image: data.image || null,
+        };
 
-    } catch (e: any) {
-        console.error(`[API/PortfolioDetail] Error fetching project for slug "${slug}":`, e);
-        return NextResponse.json(
-            { ok: false, error: e.message || 'Internal Server Error', code: e.code || 'UNKNOWN_ERROR' },
-            { status: 500 }
-        );
+        return NextResponse.json({ ok: true, item: item });
+
+    } catch (error: any) {
+        console.error(`[API] Error fetching project by slug ${slug}:`, error);
+        return NextResponse.json({ ok: false, error: error.message, code: error.code }, { status: 500 });
     }
 }

@@ -1,3 +1,4 @@
+
 import { notFound } from 'next/navigation';
 import { Locale } from "@/lib/i18n-config";
 import Image from "next/image";

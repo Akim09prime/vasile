@@ -21,7 +21,6 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel"
 
-// This function now runs on the client.
 async function getProjectFromApi(slug: string): Promise<{ project: Project | null; error?: any }> {
     try {
         const fetchUrl = `/api/public/portfolio/${slug}`;
@@ -255,7 +254,6 @@ export default function ProjectDetailsPage({ params }: { params: { slug: string,
         )
     }
     
-    // Fallback if content is missing
     const contentHtml = project.content || `<p>${project.summary}</p>`;
 
 

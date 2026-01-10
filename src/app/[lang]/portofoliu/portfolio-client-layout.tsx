@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useDebounce } from 'use-debounce';
 
 import type { ProjectSummary, ProjectType, Locale } from '@/lib/types';
 import { Input } from '@/components/ui/input';
@@ -23,10 +22,19 @@ type SortOption = 'completedAt_desc' | 'completedAt_asc' | 'name_asc';
 
 export default function PortfolioClientLayout({ initialProjects, allCategories, lang }: PortfolioClientLayoutProps) {
     const [searchTerm, setSearchTerm] = React.useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = React.useState('');
     const [activeCategory, setActiveCategory] = React.useState('all');
     const [sortOrder, setSortOrder] = React.useState<SortOption>('completedAt_desc');
     
-    const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 300);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [searchTerm]);
 
     const filteredAndSortedProjects = React.useMemo(() => {
         let filtered = initialProjects;
@@ -36,7 +44,7 @@ export default function PortfolioClientLayout({ initialProjects, allCategories, 
             filtered = filtered.filter(p => p.categorySlug === activeCategory);
         }
 
-        // Filter by search term
+        // Filter by search term (using debounced value)
         if (debouncedSearchTerm) {
             filtered = filtered.filter(p => 
                 p.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -50,10 +58,10 @@ export default function PortfolioClientLayout({ initialProjects, allCategories, 
                 case 'name_asc':
                     return a.name.localeCompare(b.name);
                 case 'completedAt_asc':
-                    return new Date(a.completedAt || a.createdAt).getTime() - new Date(b.completedAt || b.createdAt).getTime();
+                    return new Date(a.completedAt || a.createdAt || 0).getTime() - new Date(b.completedAt || b.createdAt || 0).getTime();
                 case 'completedAt_desc':
                 default:
-                    return new Date(b.completedAt || b.createdAt).getTime() - new Date(a.completedAt || a.createdAt).getTime();
+                    return new Date(b.completedAt || b.createdAt || 0).getTime() - new Date(a.completedAt || a.createdAt || 0).getTime();
             }
         });
     }, [initialProjects, activeCategory, debouncedSearchTerm, sortOrder]);

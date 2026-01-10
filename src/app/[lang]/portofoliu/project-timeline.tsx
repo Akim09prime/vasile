@@ -20,8 +20,14 @@ function TimelineItem({ project, lang, isLeft }: { project: ProjectSummary; lang
     // Ensure link is generated using the slug. Fallback to ID is safe but slug is preferred.
     const slug = project.slug || project.id;
     const projectUrl = `/${lang}/portofoliu/${slug}`;
-    const rawDate = project.completedAt || project.publishedAt;
-    const completionDate = rawDate && !isNaN(new Date(rawDate).getTime()) ? new Date(rawDate) : null;
+    
+    // SAFE DATE HANDLING: Check if date string is valid before creating a Date object.
+    const rawDateString = project.completedAt || project.publishedAt;
+    let completionDate: Date | null = null;
+    if (rawDateString && !isNaN(new Date(rawDateString).getTime())) {
+        completionDate = new Date(rawDateString);
+    }
+
 
     const variants = {
         hidden: { opacity: 0, x: isLeft ? -100 : 100 },

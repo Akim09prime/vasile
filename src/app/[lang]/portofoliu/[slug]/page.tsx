@@ -88,7 +88,14 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
     }
     
     const contentHtml = project.content || `<p>${project.summary}</p>`;
-    const completionDate = project.completedAt ? new Date(project.completedAt) : null;
+    
+    // SAFE DATE HANDLING: Check if date string is valid before creating a Date object.
+    const rawDateString = project.completedAt || project.publishedAt;
+    let completionDate: Date | null = null;
+    if (rawDateString && !isNaN(new Date(rawDateString).getTime())) {
+        completionDate = new Date(rawDateString);
+    }
+
 
     return (
         <>

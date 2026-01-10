@@ -1,8 +1,9 @@
+
 // This file is for server-side API fetching functions that can be used in Server Components.
 // It is intentionally separate from project-service.ts to avoid 'use client' conflicts.
 import 'server-only';
 
-import type { Project, ProjectSummary, GalleryImage } from '@/lib/types';
+import type { Project, ProjectSummary, GalleryImage, ImagePlaceholder } from '@/lib/types';
 import { getServerDb } from '@/lib/firebase-server-client';
 import { collection, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
 import { PlaceHolderImages } from '../placeholder-images';
@@ -100,38 +101,6 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
 
 
 /**
- * Fetches published project summaries from the public API endpoint.
- * This function is designed to be called from Server Components.
- * @returns A promise that resolves to an array of project summaries.
- */
-export async function getProjectsFromApi(): Promise<ProjectSummary[]> {
-    // Note: Using getPublicProjects() is preferred over this fetch-based approach in Server Components.
-    const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/public/portfolio`;
-
-    try {
-        const res = await fetch(apiUrl, { next: { revalidate: 300 } });
-
-        if (!res.ok) {
-            const errorBody = await res.text();
-            console.error(`[getProjectsFromApi] API request failed with status ${res.status}. Body: ${errorBody}`);
-            throw new Error(`Failed to fetch portfolio data. Status: ${res.status}`);
-        }
-
-        const data = await res.json();
-        if (!data.ok) {
-            console.error(`[getProjectsFromApi] API returned a non-ok response:`, data.error);
-            throw new Error(data.error || 'API returned a non-ok response');
-        }
-
-        return data.items || [];
-    } catch (error) {
-        console.error('[getProjectsFromApi] An error occurred during fetch:', error);
-        // Re-throwing the error to be caught by the nearest error boundary.
-        throw error;
-    }
-}
-
-/**
  * Fetches all images marked as 'isTop' from all published projects.
  * @returns A promise that resolves to an array of gallery images.
  */
@@ -184,5 +153,51 @@ export async function getGalleryImages(): Promise<GalleryImage[]> {
     } catch (error: any) {
         console.error('[getGalleryImages] FATAL: Query on "projects" collection failed.', error);
         throw new Error(`Failed to fetch gallery images from Firestore. Details: ${error.message}`);
+    }
+}
+
+
+/**
+ * Fetches a single project by SLUG using the server-side client SDK.
+ * This is the canonical function to be used by Server Components.
+ */
+export async function getProjectBySlug(slug: string): Promise<Project | null> {
+    const db = getServerDb();
+    try {
+        const projectsRef = collection(db, "projects");
+        const q = query(projectsRef, where("slug", "==", slug), limit(1));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            console.log(`[ProjectApiService] No project found with slug: ${slug}`);
+            return null;
+        }
+
+        const docSnap = querySnapshot.docs[0];
+        const data = docSnap.data();
+        
+        const coverImage = PlaceHolderImages.find(p => p.id === data.coverMediaId);
+
+        return {
+            id: docSnap.id,
+            name: data.name,
+            slug: data.slug,
+            category: data.category,
+            categorySlug: data.categorySlug,
+            summary: data.summary,
+            content: data.content,
+            location: data.location,
+            isPublished: data.isPublished,
+            publishedAt: data.publishedAt?.toDate?.().toISOString(),
+            completedAt: data.completedAt?.toDate?.().toISOString(),
+            createdAt: data.createdAt.toDate().toISOString(),
+            coverMediaId: data.coverMediaId,
+            media: data.media || [],
+            image: coverImage || null,
+        };
+    } catch (error: any) {
+        console.error(`[ProjectApiService] Error fetching project by slug ${slug} (server SDK):`, error);
+        // Re-throwing the error to be handled by the caller (e.g., in a try/catch block or an error boundary)
+        throw new Error(`Failed to fetch project ${slug}.`);
     }
 }

@@ -5,7 +5,7 @@ import { db } from '@/lib/firebase';
 import type { Project, ProjectData, ProjectType, ProjectSummary } from '@/lib/types';
 import { PlaceHolderImages } from '../placeholder-images';
 import type { ImagePlaceholder } from '../placeholder-images';
-import { getSeedProjects } from './placeholder-db';
+import { getSeedProjects } from './deprecated-placeholder-db';
 import { defaultProjectTypes } from '../defaults';
 import { collection, getDocs, query, where, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, setDoc, Query as FirestoreQuery, Timestamp, limit } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -89,10 +89,11 @@ export async function getProjectsFromFirestore(params: { showUnpublished?: boole
 
 
 /**
- * Fetches a single project by SLUG using the client SDK.
- * Respects security rules.
+ * CLIENT-SIDE version for getting a project by slug.
+ * This should ONLY be used in client components.
+ * For server components, use the one in `project-api-service.ts`.
  */
-export async function getProjectBySlug(slug: string): Promise<Project | null> {
+export async function getProjectBySlug_client(slug: string): Promise<Project | null> {
     try {
         const projectsRef = collection(db, "projects");
         const q = query(projectsRef, where("slug", "==", slug), limit(1));
@@ -105,12 +106,6 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
 
         const docSnap = querySnapshot.docs[0];
         const data = docSnap.data();
-
-        // Additional check to ensure only published projects are returned to non-admins
-        // This is a backup for Firestore rules.
-        // if (!data.isPublished && !isUserAdmin()) {
-        //     return null; 
-        // }
 
         const coverImage = PlaceHolderImages.find(p => p.id === data.coverMediaId);
 
@@ -134,8 +129,8 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
     } catch (error: any) {
         if (error.code === 'permission-denied') {
              const permissionError = new FirestorePermissionError({
-                path: `projects query where slug == ${slug}`,
-                operation: 'list',
+                path: `projects`,
+                operation: 'get',
             });
             errorEmitter.emit('permission-error', permissionError);
             throw permissionError;

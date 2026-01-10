@@ -9,11 +9,13 @@ import { ArrowRight, Calendar, MapPin, Tag } from "lucide-react";
 import Link from "next/link";
 import type { Project } from "@/lib/types";
 import { Gallery } from './gallery-client';
-import { getProjectBySlug } from '@/lib/services/project-service';
+import { getProjectBySlug } from '@/lib/services/project-api-service';
 
+// This is now a Server Component. It fetches data directly on the server.
 async function getProject(slug: string): Promise<Project | null> {
     try {
         console.log(`[portfolio-detail] Fetching project with slug: ${slug}`);
+        // This function now runs on the server and directly queries Firestore.
         const project = await getProjectBySlug(slug);
         console.log(`[portfolio-detail] Found project: ${!!project}`);
         return project;
@@ -41,17 +43,18 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
     const project = await getProject(slug);
 
     if (!project) {
+        // If the project is not found, render the 404 page.
         notFound();
     }
     
     const contentHtml = project.content || `<p>${project.summary}</p>`;
     
+    // SAFE DATE HANDLING
     const rawDateString = project.completedAt || project.publishedAt;
     let completionDate: Date | null = null;
     if (rawDateString && !isNaN(new Date(rawDateString).getTime())) {
         completionDate = new Date(rawDateString);
     }
-
 
     return (
         <>

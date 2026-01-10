@@ -4,11 +4,11 @@
   "private": "true",
   "packageManager": "npm@10.8.2",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 9002 --hostname 0.0.0.0",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "NODE_ENV=production next build",
-    "start": "next start",
+    "start": "next start --port 9002 --hostname 0.0.0.0",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "postinstall": "patch-package",

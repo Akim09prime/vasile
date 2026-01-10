@@ -1,39 +1,41 @@
-
+import 'server-only';
 import { NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebase-admin.server';
-import type { ProjectSummary } from '@/lib/types';
+import { getAdminDb } from "@/lib/firebase-admin.server";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const toISO = (timestamp: any): string | null => {
-    return timestamp?.toDate?.().toISOString() || null;
-}
-
 export async function GET() {
-  const { db, info } = getAdminDb();
+  const { db, info: adminInfo } = getAdminDb();
 
   if (!db) {
     console.error("[API/public/portfolio] Admin DB not initialized.");
     return NextResponse.json(
-      { ok: false, error: "Firebase Admin DB is not initialized. Check server logs.", code: "ADMIN_NOT_CONFIGURED", items: [] },
+      { 
+        ok: false, 
+        error: "Server configuration error. Check server logs.", 
+        code: "ADMIN_DB_UNAVAILABLE",
+        items: []
+      },
       { status: 500 }
     );
   }
 
   try {
-    const summariesRef = db.collection('project_summaries');
-    const snapshot = await summariesRef
-        .where('isPublished', '==', true)
-        .orderBy('publishedAt', 'desc')
-        .limit(100)
-        .get();
+    const snapshot = await db
+      .collection('project_summaries')
+      .where('isPublished', '==', true)
+      .orderBy('publishedAt', 'desc')
+      .limit(100)
+      .get();
 
     if (snapshot.empty) {
-        return NextResponse.json({ ok: true, items: [] });
+      return NextResponse.json({ ok: true, items: [] });
     }
 
-    const items: ProjectSummary[] = snapshot.docs.map(doc => {
+    const toISO = (timestamp: any) => timestamp?.toDate?.().toISOString() || null;
+
+    const items = snapshot.docs.map(doc => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -50,8 +52,8 @@ export async function GET() {
         image: data.image || null,
       };
     });
-
-    // Final sort in JS to handle potential missing completedAt dates robustly
+    
+    // Perform final sort in JS to guarantee order by completedAt > publishedAt > createdAt
     items.sort((a, b) => {
         const dateA = new Date(a.completedAt || a.publishedAt || a.createdAt || 0).getTime();
         const dateB = new Date(b.completedAt || b.publishedAt || b.createdAt || 0).getTime();
@@ -61,9 +63,14 @@ export async function GET() {
     return NextResponse.json({ ok: true, items });
 
   } catch (e: any) {
-    console.error("[API/public/portfolio] FATAL ERROR:", e);
+    console.error(`[API/public/portfolio] FATAL ERROR: ${e.message}`, { code: e.code, stack: e.stack });
     return NextResponse.json(
-      { ok: false, error: e?.message || String(e), code: e?.code || "INTERNAL_ERROR", items: [] },
+      { 
+        ok: false, 
+        error: "A server error occurred while fetching the portfolio.", 
+        code: e.code || 'UNKNOWN_ERROR',
+        items: [] 
+      },
       { status: 500 }
     );
   }

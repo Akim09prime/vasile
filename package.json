@@ -1,4 +1,3 @@
-
 {
   "name": "nextn",
   "version": "0.1.0",
@@ -6,7 +5,7 @@
   "packageManager": "npm@10.8.2",
   "scripts": {
     "dev": "next dev --port 9002 --hostname 0.0.0.0",
-    "dev:clean": "pkill -f 'next dev' || true && rm -rf .next && npm run dev",
+    "dev:clean": "lsof -ti :9002 | xargs -r kill -9 && rm -rf .next && npm run dev",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "NODE_ENV=production next build",

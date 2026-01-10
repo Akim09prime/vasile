@@ -17,9 +17,10 @@ function TimelineItem({ project, lang, isLeft }: { project: ProjectSummary; lang
     const ref = React.useRef(null);
     const isInView = useInView(ref, { once: true, amount: 0.3 });
 
-    // Ensure link is generated using the slug. Fallback to ID is safe but slug is preferred.
-    const slug = project.slug || project.id;
+    // Ensure link is generated using the slug. Fallback to ID is safe but slug is preferred for SEO.
+    const slug = project.slug;
     const projectUrl = `/${lang}/portofoliu/${slug}`;
+    const isLinkValid = !!slug;
     
     // SAFE DATE HANDLING: Check if date string is valid before creating a Date object.
     const rawDateString = project.completedAt || project.publishedAt;
@@ -45,15 +46,33 @@ function TimelineItem({ project, lang, isLeft }: { project: ProjectSummary; lang
             <div className="md:flex items-start">
                 <div className={`md:w-1/2 ${isLeft ? 'md:pr-8' : 'md:pl-8 md:order-2'}`}>
                     <Card className="overflow-hidden group">
-                        <Link href={projectUrl}>
-                            <div className="relative aspect-[4/3] bg-muted overflow-hidden">
+                        {isLinkValid ? (
+                             <Link href={projectUrl}>
+                                <div className="relative aspect-[4/3] bg-muted overflow-hidden">
+                                    {project.image ? (
+                                        <Image
+                                            src={project.image.imageUrl}
+                                            alt={project.image.description || `Imagine pentru ${project.name}`}
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, 50vw"
+                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <p className="text-sm text-muted-foreground">Imagine indisponibilă</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </Link>
+                        ) : (
+                             <div className="relative aspect-[4/3] bg-muted overflow-hidden">
                                 {project.image ? (
                                     <Image
                                         src={project.image.imageUrl}
                                         alt={project.image.description || `Imagine pentru ${project.name}`}
                                         fill
                                         sizes="(max-width: 768px) 100vw, 50vw"
-                                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                        className="object-cover"
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">
@@ -61,7 +80,8 @@ function TimelineItem({ project, lang, isLeft }: { project: ProjectSummary; lang
                                     </div>
                                 )}
                             </div>
-                        </Link>
+                        )}
+                       
                         <CardHeader>
                             <CardTitle>{project.name}</CardTitle>
                             <div className="flex flex-wrap gap-2 pt-2">
@@ -73,8 +93,12 @@ function TimelineItem({ project, lang, isLeft }: { project: ProjectSummary; lang
                             <p className="text-muted-foreground line-clamp-3">{project.summary}</p>
                         </CardContent>
                         <CardFooter>
-                            <Button asChild variant="secondary" className="w-full">
-                                <Link href={projectUrl}>Vezi Proiectul <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                            <Button asChild variant="secondary" className="w-full" disabled={!isLinkValid}>
+                                {isLinkValid ? (
+                                    <Link href={projectUrl}>Vezi Proiectul <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                                ) : (
+                                    <span>Link indisponibil</span>
+                                )}
                             </Button>
                         </CardFooter>
                     </Card>

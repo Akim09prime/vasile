@@ -13,7 +13,9 @@ import { getProjectBySlug } from '@/lib/services/project-service';
 
 async function getProject(slug: string): Promise<Project | null> {
     try {
+        console.log(`[portfolio-detail] Fetching project with slug: ${slug}`);
         const project = await getProjectBySlug(slug);
+        console.log(`[portfolio-detail] Found project: ${!!project}`);
         return project;
     } catch (e) {
         console.error(`Failed to fetch project with slug: ${slug}`, e);

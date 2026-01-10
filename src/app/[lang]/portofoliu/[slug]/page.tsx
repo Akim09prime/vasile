@@ -1,110 +1,49 @@
 
-
-'use client';
-
-import * as React from 'react';
+import { notFound } from 'next/navigation';
 import { Locale } from "@/lib/i18n-config";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, MapPin, Tag, Terminal, Loader } from "lucide-react";
+import { ArrowRight, Calendar, MapPin, Tag } from "lucide-react";
 import Link from "next/link";
 import type { Project } from "@/lib/types";
 import { Gallery } from './gallery-client';
+import { getProjectBySlug } from '@/lib/services/project-service';
 
-async function getProjectFromApi(slug: string): Promise<{ project: Project | null; error?: any }> {
+async function getProject(slug: string): Promise<Project | null> {
     try {
-        const fetchUrl = `/api/public/portfolio/${slug}`;
-        console.log(`[ProjectDetailsPage] Fetching project from: ${fetchUrl}`);
-            
-        const res = await fetch(fetchUrl, { cache: 'no-store' });
-
-        const body = await res.json();
-        
-        if (!res.ok) {
-           return { project: null, error: { status: res.status, body: body } };
-        }
-        
-        if (body.ok) {
-            return { project: body.item, error: null };
-        } else {
-            return { project: null, error: { status: res.status, body: body } };
-        }
-
-    } catch (error) {
-        console.error(`Fetch failed for project ${slug}:`, error);
-        return { project: null, error: { status: 500, body: { error: (error as Error).message } } };
+        const project = await getProjectBySlug(slug);
+        return project;
+    } catch (e) {
+        console.error(`Failed to fetch project with slug: ${slug}`, e);
+        return null;
     }
 }
 
-export default function ProjectDetailsPage({ params }: { params: { slug: string, lang: Locale }}) {
-    const { slug, lang } = params;
-    const [project, setProject] = React.useState<Project | null>(null);
-    const [error, setError] = React.useState<any | null>(null);
-    const [loading, setLoading] = React.useState(true);
-
-    React.useEffect(() => {
-        async function loadProject() {
-            setLoading(true);
-            const { project: fetchedProject, error: fetchError } = await getProjectFromApi(slug);
-            setProject(fetchedProject);
-            setError(fetchError);
-            setLoading(false);
-
-            if (fetchedProject) {
-                document.title = `${fetchedProject.name} | CARVELLO`;
-            }
-        }
-        loadProject();
-    }, [slug]);
-
-    if (loading) {
-        return (
-             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
-                <Loader className="h-8 w-8 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground">Încărcare proiect...</p>
-            </div>
-        )
+export async function generateMetadata({ params }: { params: { slug: string }}) {
+  const project = await getProject(params.slug);
+  if (!project) {
+    return {
+      title: 'Proiect negăsit'
     }
+  }
+  return {
+    title: `${project.name} | CARVELLO`,
+    description: project.summary,
+  }
+}
 
-    if (error || !project) {
-        const is404 = error?.status === 404;
-        return (
-            <div className="container-max section-padding">
-                <Card className="p-6 text-center">
-                    <h1 className="h2-headline text-destructive">{is404 ? "Proiectul nu a fost găsit" : "Eroare la încărcare"}</h1>
-                    <p className="mt-4">
-                        {is404 
-                            ? `Proiectul cu identificatorul "${slug}" nu există sau nu este publicat.`
-                            : `A apărut o eroare la încărcarea detaliilor proiectului.`
-                        }
-                    </p>
-                    <div className="mt-6">
-                        <Button asChild>
-                            <Link href={`/${lang}/portofoliu`}>Înapoi la Portofoliu</Link>
-                        </Button>
-                    </div>
-                    {process.env.NODE_ENV === "development" && error && (
-                        <div className="mt-6 p-4 bg-secondary rounded-md text-sm text-left">
-                            <h3 className="font-bold mb-2 flex items-center gap-2"><Terminal className="w-4 h-4"/>Debug Information (Dev Only)</h3>
-                            <pre className="whitespace-pre-wrap break-all font-mono text-xs">
-                               <p><strong>Status:</strong> {error.status}</p>
-                               <strong>API Response Body:</strong>
-                               <div className="mt-2 p-2 border rounded bg-background/50">
-                                    {JSON.stringify(error.body, null, 2)}
-                               </div>
-                            </pre>
-                        </div>
-                    )}
-                </Card>
-            </div>
-        )
+export default async function ProjectDetailsPage({ params }: { params: { slug: string, lang: Locale }}) {
+    const { slug, lang } = params;
+    const project = await getProject(slug);
+
+    if (!project) {
+        notFound();
     }
     
     const contentHtml = project.content || `<p>${project.summary}</p>`;
     
-    // SAFE DATE HANDLING: Check if date string is valid before creating a Date object.
     const rawDateString = project.completedAt || project.publishedAt;
     let completionDate: Date | null = null;
     if (rawDateString && !isNaN(new Date(rawDateString).getTime())) {

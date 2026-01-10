@@ -154,4 +154,3 @@ export function Gallery({ project, lang }: { project: Project, lang: Locale }) {
         </section>
     );
 }
-

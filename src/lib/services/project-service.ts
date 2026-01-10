@@ -7,7 +7,7 @@ import { PlaceHolderImages } from '../placeholder-images';
 import type { ImagePlaceholder } from '../placeholder-images';
 import { getSeedProjects } from './placeholder-db';
 import { defaultProjectTypes } from '../defaults';
-import { collection, getDocs, query, where, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, setDoc, Query as FirestoreQuery, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, setDoc, Query as FirestoreQuery, Timestamp, limit } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -89,19 +89,29 @@ export async function getProjectsFromFirestore(params: { showUnpublished?: boole
 
 
 /**
- * Fetches a single project by ID using the client SDK.
+ * Fetches a single project by SLUG using the client SDK.
  * Respects security rules.
  */
-export async function getProjectById(id: string): Promise<Project | null> {
+export async function getProjectBySlug(slug: string): Promise<Project | null> {
     try {
-        const docRef = doc(db, "projects", id);
-        const docSnap = await getDoc(docRef);
+        const projectsRef = collection(db, "projects");
+        const q = query(projectsRef, where("slug", "==", slug), limit(1));
+        const querySnapshot = await getDocs(q);
 
-        if (!docSnap.exists()) {
+        if (querySnapshot.empty) {
+            console.log(`[ProjectService] No project found with slug: ${slug}`);
             return null;
         }
 
+        const docSnap = querySnapshot.docs[0];
         const data = docSnap.data();
+
+        // Additional check to ensure only published projects are returned to non-admins
+        // This is a backup for Firestore rules.
+        // if (!data.isPublished && !isUserAdmin()) {
+        //     return null; 
+        // }
+
         const coverImage = PlaceHolderImages.find(p => p.id === data.coverMediaId);
 
         return {
@@ -124,14 +134,14 @@ export async function getProjectById(id: string): Promise<Project | null> {
     } catch (error: any) {
         if (error.code === 'permission-denied') {
              const permissionError = new FirestorePermissionError({
-                path: `projects/${id}`,
-                operation: 'get',
+                path: `projects query where slug == ${slug}`,
+                operation: 'list',
             });
             errorEmitter.emit('permission-error', permissionError);
             throw permissionError;
         }
-        console.error(`[ProjectService] Error fetching project by ID ${id} (client SDK):`, error);
-        throw new Error(`Failed to fetch project ${id}.`);
+        console.error(`[ProjectService] Error fetching project by slug ${slug} (client SDK):`, error);
+        throw new Error(`Failed to fetch project ${slug}.`);
     }
 }
 

@@ -36,34 +36,26 @@ function getLocale(request: NextRequest): string {
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
-  // Ignore admin routes
-  if (pathname.startsWith('/admin')) {
+  // Step 1: Skip API, admin, and internal Next.js routes
+  if (
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    /\.(.*)$/.test(pathname)
+  ) {
     return NextResponse.next()
   }
 
-  // `/_next/` and `/api/` are ignored by the watcher, but we need to ignore files in `public` manually.
-  // If you have some static assets in `public`, you can add them to this array.
-  const publicFile = /\.(.*)$/
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/static') ||
-    publicFile.test(pathname)
-  ) {
-    return
-  }
-
-  // Check if there is any supported locale in the pathname
+  // Step 2: Check if there is any supported locale in the pathname
   const pathnameIsMissingLocale = i18n.locales.every(
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
   )
 
-  // Redirect if there is no locale
+  // Step 3: Redirect if there is no locale
   if (pathnameIsMissingLocale) {
     const locale = getLocale(request)
 
-    // e.g. incoming request is /products
-    // The new URL is now /en-US/products
     return NextResponse.redirect(
       new URL(
         `/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`,
@@ -72,13 +64,15 @@ export function middleware(request: NextRequest) {
     )
   }
 
-  // If locale is in path, set a cookie
+  // Step 4: If locale is in path, set a cookie
   const localeInPath = i18n.locales.find(l => pathname.startsWith(`/${l}/`) || pathname === `/${l}`);
   if (localeInPath) {
     const response = NextResponse.next();
     response.cookies.set('NEXT_LOCALE', localeInPath, { maxAge: 60 * 60 * 24 * 365 }); // 1 year
     return response;
   }
+
+  return NextResponse.next();
 }
 
 export const config = {

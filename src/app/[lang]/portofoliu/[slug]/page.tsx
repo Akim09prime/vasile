@@ -1,111 +1,105 @@
 
-import { notFound } from 'next/navigation';
+
+'use client';
+
+import * as React from 'react';
 import { Locale } from "@/lib/i18n-config";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, MapPin, Tag } from "lucide-react";
+import { ArrowRight, Calendar, MapPin, Tag, Terminal, Loader } from "lucide-react";
 import Link from "next/link";
 import type { Project } from "@/lib/types";
 import { Gallery } from './gallery-client';
-import { getAdminDb } from '@/lib/firebase-admin.server';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-async function getProject(slug: string): Promise<Project | null> {
-    const { db } = getAdminDb();
-    if (!db) {
-        console.error("[ProjectPage] Admin DB not initialized.");
-        return null;
-    }
-    
-    const projectsRef = db.collection('projects');
-    const snapshot = await projectsRef.where('slug', '==', slug).limit(1).get();
+async function getProjectFromApi(slug: string): Promise<{ project: Project | null; error?: any }> {
+    try {
+        const fetchUrl = `/api/public/portfolio/${slug}`;
+        console.log(`[ProjectDetailsPage] Fetching project from: ${fetchUrl}`);
+            
+        const res = await fetch(fetchUrl, { cache: 'no-store' });
 
-    if (snapshot.empty) {
-        const docById = await projectsRef.doc(slug).get();
-        if(!docById.exists) return null;
-
-        const data = docById.data();
-        if(!data || !data.isPublished) return null;
+        const body = await res.json();
         
-        const projectData = { id: docById.id, ...data } as Project;
-         // Manually resolve image URLs
-        projectData.image = PlaceHolderImages.find(img => img.id === projectData.coverMediaId);
-        if (projectData.media && Array.isArray(projectData.media)) {
-            projectData.media = projectData.media.map((item: any) => {
-                const fullImage = PlaceHolderImages.find(p_img => p_img.id === item.id);
-                return fullImage ? { ...item, ...fullImage } : item;
-            });
+        if (!res.ok) {
+           return { project: null, error: { status: res.status, body: body } };
         }
-        // Date conversion
-        projectData.completedAt = data.completedAt?.toDate?.().toISOString() || null;
-        projectData.publishedAt = data.publishedAt?.toDate?.().toISOString() || null;
-        projectData.createdAt = data.createdAt?.toDate?.().toISOString() || null;
+        
+        if (body.ok) {
+            return { project: body.item, error: null };
+        } else {
+            return { project: null, error: { status: res.status, body: body } };
+        }
 
-        return projectData;
+    } catch (error) {
+        console.error(`Fetch failed for project ${slug}:`, error);
+        return { project: null, error: { status: 500, body: { error: (error as Error).message } } };
     }
-
-    const doc = snapshot.docs[0];
-    const data = doc.data();
-
-    if (!data.isPublished) {
-        return null;
-    }
-    
-    const projectData = { id: doc.id, ...data } as Project;
-
-    // Resolve images
-    projectData.image = PlaceHolderImages.find(img => img.id === projectData.coverMediaId);
-    if (projectData.media && Array.isArray(projectData.media)) {
-        projectData.media = projectData.media.map(item => {
-            // The items in `media` might be just {id: '...'} from the form
-            // We need to find the full image object from our placeholder data
-            const fullImage = PlaceHolderImages.find(p_img => p_img.id === (item as any).id);
-            return fullImage ? { ...item, ...fullImage } : item;
-        });
-    }
-    
-    // Date conversion
-    projectData.completedAt = data.completedAt?.toDate?.().toISOString() || null;
-    projectData.publishedAt = data.publishedAt?.toDate?.().toISOString() || null;
-    projectData.createdAt = data.createdAt?.toDate?.().toISOString() || null;
-
-    return projectData;
 }
 
-
-export async function generateMetadata({ params }: { params: { slug: string }}) {
-  const project = await getProject(params.slug);
-  if (!project) {
-    return {
-      title: 'Proiect negăsit',
-    }
-  }
-  return {
-    title: `${project.name} | CARVELLO`,
-    description: project.summary,
-    openGraph: {
-        title: project.name,
-        description: project.summary,
-        images: [
-            {
-                url: project.image?.imageUrl || '',
-                width: 1200,
-                height: 630,
-                alt: project.name,
-            },
-        ],
-    },
-  }
-}
-
-export default async function ProjectDetailsPage({ params }: { params: { slug: string, lang: Locale }}) {
+export default function ProjectDetailsPage({ params }: { params: { slug: string, lang: Locale }}) {
     const { slug, lang } = params;
-    const project = await getProject(slug);
+    const [project, setProject] = React.useState<Project | null>(null);
+    const [error, setError] = React.useState<any | null>(null);
+    const [loading, setLoading] = React.useState(true);
 
-    if (!project) {
-        notFound();
+    React.useEffect(() => {
+        async function loadProject() {
+            setLoading(true);
+            const { project: fetchedProject, error: fetchError } = await getProjectFromApi(slug);
+            setProject(fetchedProject);
+            setError(fetchError);
+            setLoading(false);
+
+            if (fetchedProject) {
+                document.title = `${fetchedProject.name} | CARVELLO`;
+            }
+        }
+        loadProject();
+    }, [slug]);
+
+    if (loading) {
+        return (
+             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+                <Loader className="h-8 w-8 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">Încărcare proiect...</p>
+            </div>
+        )
+    }
+
+    if (error || !project) {
+        const is404 = error?.status === 404;
+        return (
+            <div className="container-max section-padding">
+                <Card className="p-6 text-center">
+                    <h1 className="h2-headline text-destructive">{is404 ? "Proiectul nu a fost găsit" : "Eroare la încărcare"}</h1>
+                    <p className="mt-4">
+                        {is404 
+                            ? `Proiectul cu identificatorul "${slug}" nu există sau nu este publicat.`
+                            : `A apărut o eroare la încărcarea detaliilor proiectului.`
+                        }
+                    </p>
+                    <div className="mt-6">
+                        <Button asChild>
+                            <Link href={`/${lang}/portofoliu`}>Înapoi la Portofoliu</Link>
+                        </Button>
+                    </div>
+                    {process.env.NODE_ENV === "development" && error && (
+                        <div className="mt-6 p-4 bg-secondary rounded-md text-sm text-left">
+                            <h3 className="font-bold mb-2 flex items-center gap-2"><Terminal className="w-4 h-4"/>Debug Information (Dev Only)</h3>
+                            <pre className="whitespace-pre-wrap break-all font-mono text-xs">
+                               <p><strong>Status:</strong> {error.status}</p>
+                               <strong>API Response Body:</strong>
+                               <div className="mt-2 p-2 border rounded bg-background/50">
+                                    {JSON.stringify(error.body, null, 2)}
+                               </div>
+                            </pre>
+                        </div>
+                    )}
+                </Card>
+            </div>
+        )
     }
     
     const contentHtml = project.content || `<p>${project.summary}</p>`;

@@ -1,28 +1,32 @@
+
 import { PageHeader } from '@/components/layout/page-header';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { Locale } from '@/lib/i18n-config';
-import ProjectTimeline from './project-timeline';
 import { getPublicProjects } from '@/lib/services/project-api-service';
 import { getPortfolioPageData } from '@/lib/services/page-service';
-
+import { getProjectTypes } from '@/lib/services/settings-service';
+import PortfolioClientLayout from './portfolio-client-layout';
 
 export const revalidate = 300; // Revalidate at most every 5 minutes
 
-async function loadProjects() {
+async function loadData() {
     try {
-        const projects = await getPublicProjects();
-        return { projects, error: null };
+        const [projects, categories] = await Promise.all([
+            getPublicProjects(),
+            getProjectTypes()
+        ]);
+        return { projects, categories, error: null };
     } catch (error: any) {
         console.error('[PortfolioPage] Failed to load data:', error);
-        return { projects: [], error: error.message || 'A apărut o eroare la încărcarea proiectelor.' };
+        return { projects: [], categories: [], error: error.message || 'A apărut o eroare la încărcarea proiectelor.' };
     }
 }
 
 export default async function PortfolioPage({ params }: { params: { lang: Locale }}) {
     const { lang } = params;
     const { intro } = getPortfolioPageData();
-    const { projects, error } = await loadProjects();
+    const { projects, categories, error } = await loadData();
     
     return (
         <>
@@ -40,7 +44,11 @@ export default async function PortfolioPage({ params }: { params: { lang: Locale
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                 ) : (
-                    <ProjectTimeline projects={projects} lang={lang} />
+                    <PortfolioClientLayout 
+                        initialProjects={projects} 
+                        allCategories={categories}
+                        lang={lang} 
+                    />
                 )}
             </section>
         </>

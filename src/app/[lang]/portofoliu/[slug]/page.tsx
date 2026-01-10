@@ -9,14 +9,14 @@ import { ArrowRight, Calendar, MapPin, Tag } from "lucide-react";
 import Link from "next/link";
 import type { Project } from "@/lib/types";
 import { Gallery } from './gallery-client';
-import { getProjectBySlug } from '@/lib/services/project-api-service';
+import { getPublicProjectBySlug } from '@/lib/services/project-api-service';
 
-// This is now a Server Component. It fetches data directly on the server.
+// This is now a Server Component that fetches data directly on the server.
 async function getProject(slug: string): Promise<Project | null> {
     try {
         console.log(`[portfolio-detail] Fetching project with slug: ${slug}`);
-        // This function now runs on the server and directly queries Firestore.
-        const project = await getProjectBySlug(slug);
+        // Use the correct public-facing, server-side function
+        const project = await getPublicProjectBySlug(slug);
         console.log(`[portfolio-detail] Found project: ${!!project}`);
         return project;
     } catch (e) {

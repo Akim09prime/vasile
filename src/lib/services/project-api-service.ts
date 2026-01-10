@@ -1,4 +1,5 @@
 
+
 // This file is for server-side API fetching functions that can be used in Server Components.
 // It is intentionally separate from project-service.ts to avoid 'use client' conflicts.
 import 'server-only';
@@ -9,7 +10,7 @@ import { collection, query, where, orderBy, getDocs, limit } from 'firebase/fire
 import { PlaceHolderImages } from '../placeholder-images';
 
 /**
- * Maps a full Project object to a ProjectSummary object.
+ * Maps a full Project document to a ProjectSummary object.
  */
 function mapProjectToSummary(projectDoc: any): ProjectSummary {
     const data = projectDoc.data();
@@ -31,6 +32,36 @@ function mapProjectToSummary(projectDoc: any): ProjectSummary {
         image: coverImage || null,
     };
 }
+
+/**
+ * Maps a full Project document (from `projects` collection) to a full Project object for the detail page.
+ */
+function mapDocToProject(docSnap: any): Project | null {
+    if (!docSnap.exists()) {
+        return null;
+    }
+    const data = docSnap.data();
+    const coverImage = PlaceHolderImages.find(p => p.id === data.coverMediaId);
+    
+    return {
+        id: docSnap.id,
+        name: data.name,
+        slug: data.slug,
+        category: data.category,
+        categorySlug: data.categorySlug,
+        summary: data.summary,
+        content: data.content,
+        location: data.location,
+        isPublished: data.isPublished,
+        publishedAt: data.publishedAt?.toDate?.().toISOString() || null,
+        completedAt: data.completedAt?.toDate?.().toISOString() || null,
+        createdAt: data.createdAt?.toDate?.().toISOString() || null,
+        coverMediaId: data.coverMediaId,
+        media: data.media || [],
+        image: coverImage || null,
+    };
+}
+
 
 /**
  * Sorts an array of projects by completion date, with fallbacks.
@@ -158,6 +189,38 @@ export async function getGalleryImages(): Promise<GalleryImage[]> {
 
 
 /**
+ * Fetches a single PUBLISHED project by SLUG. It queries the 'projects' collection,
+ * which contains the full data needed for the detail page.
+ */
+export async function getPublicProjectBySlug(slug: string): Promise<Project | null> {
+    const db = getServerDb();
+    try {
+        const projectsRef = collection(db, "projects");
+        const q = query(
+            projectsRef,
+            where("slug", "==", slug),
+            where("isPublished", "==", true),
+            limit(1)
+        );
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            console.log(`[getPublicProjectBySlug] No published project found with slug: ${slug}`);
+            return null;
+        }
+
+        const docSnap = querySnapshot.docs[0];
+        return mapDocToProject(docSnap);
+
+    } catch (error: any) {
+        console.error(`[ProjectApiService] Error fetching public project by slug ${slug}:`, error);
+        // Re-throwing is better than returning null, as it indicates a system failure, not just "not found".
+        throw new Error(`Failed to query project ${slug}. Reason: ${error.message}`);
+    }
+}
+
+
+/**
  * Fetches a single project by SLUG using the server-side client SDK.
  * This is the canonical function to be used by Server Components.
  */
@@ -201,3 +264,4 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
         throw new Error(`Failed to fetch project ${slug}.`);
     }
 }
+

@@ -9,14 +9,14 @@ import { ArrowRight, Calendar, MapPin, Tag } from "lucide-react";
 import Link from "next/link";
 import type { Project } from "@/lib/types";
 import { Gallery } from './gallery-client';
-import { getPublicProjectBySlug } from '@/lib/services/project-api-service';
+import { getFullPublicProjectBySlug } from '@/lib/services/project-api-service';
 
 // This is now a Server Component that fetches data directly on the server.
 async function getProject(slug: string): Promise<Project | null> {
     try {
         console.log(`[portfolio-detail] Fetching project with slug: ${slug}`);
         // Use the correct public-facing, server-side function
-        const project = await getPublicProjectBySlug(slug);
+        const project = await getFullPublicProjectBySlug(slug);
         console.log(`[portfolio-detail] Found project: ${!!project}`);
         return project;
     } catch (e) {

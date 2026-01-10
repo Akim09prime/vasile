@@ -6,7 +6,7 @@ import 'server-only';
 
 import type { Project, ProjectSummary, GalleryImage, ImagePlaceholder } from '@/lib/types';
 import { getServerDb } from '@/lib/firebase-server-client';
-import { collection, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '../placeholder-images';
 
 /**
@@ -43,6 +43,16 @@ function mapDocToProject(docSnap: any): Project | null {
     const data = docSnap.data();
     const coverImage = PlaceHolderImages.find(p => p.id === data.coverMediaId);
     
+    // Ensure media array is valid
+    const media = Array.isArray(data.media) ? data.media.map((m: any) => ({
+        id: m.id,
+        description: m.description,
+        imageUrl: m.imageUrl,
+        imageHint: m.imageHint,
+        rating: m.rating || 0,
+        isTop: m.isTop || false,
+    })) : [];
+
     return {
         id: docSnap.id,
         name: data.name,
@@ -57,7 +67,7 @@ function mapDocToProject(docSnap: any): Project | null {
         completedAt: data.completedAt?.toDate?.().toISOString() || null,
         createdAt: data.createdAt?.toDate?.().toISOString() || null,
         coverMediaId: data.coverMediaId,
-        media: data.media || [],
+        media: media,
         image: coverImage || null,
     };
 }
@@ -189,10 +199,41 @@ export async function getGalleryImages(): Promise<GalleryImage[]> {
 
 
 /**
- * Fetches a single PUBLISHED project by SLUG. It queries the 'projects' collection,
- * which contains the full data needed for the detail page.
+ * Fetches a single PUBLISHED project summary by SLUG from the `project_summaries` collection.
+ * This is used by the API route.
  */
-export async function getPublicProjectBySlug(slug: string): Promise<Project | null> {
+export async function getPublicProjectBySlug(slug: string): Promise<ProjectSummary | null> {
+    const db = getServerDb();
+    try {
+        const summariesRef = collection(db, "project_summaries");
+        const q = query(
+            summariesRef,
+            where("slug", "==", slug),
+            where("isPublished", "==", true),
+            limit(1)
+        );
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            console.log(`[getPublicProjectBySlug] No published project summary found with slug: ${slug}`);
+            return null;
+        }
+
+        const docSnap = querySnapshot.docs[0];
+        return mapProjectToSummary(docSnap);
+
+    } catch (error: any) {
+        console.error(`[ProjectApiService] Error fetching public project summary by slug ${slug}:`, error);
+        throw new Error(`Failed to query project summary ${slug}. Reason: ${error.message}`);
+    }
+}
+
+
+/**
+ * Fetches a single FULL, PUBLISHED project by SLUG from the `projects` collection.
+ * This is used by the server component detail page to get all data, including `content`.
+ */
+export async function getFullPublicProjectBySlug(slug: string): Promise<Project | null> {
     const db = getServerDb();
     try {
         const projectsRef = collection(db, "projects");
@@ -205,17 +246,16 @@ export async function getPublicProjectBySlug(slug: string): Promise<Project | nu
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-            console.log(`[getPublicProjectBySlug] No published project found with slug: ${slug}`);
+            console.log(`[getFullPublicProjectBySlug] No published project found with slug: ${slug}`);
             return null;
         }
-
+        
         const docSnap = querySnapshot.docs[0];
         return mapDocToProject(docSnap);
 
     } catch (error: any) {
-        console.error(`[ProjectApiService] Error fetching public project by slug ${slug}:`, error);
-        // Re-throwing is better than returning null, as it indicates a system failure, not just "not found".
-        throw new Error(`Failed to query project ${slug}. Reason: ${error.message}`);
+        console.error(`[ProjectApiService] Error fetching full public project by slug ${slug}:`, error);
+        throw new Error(`Failed to query full project ${slug}. Reason: ${error.message}`);
     }
 }
 
@@ -237,27 +277,8 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
         }
 
         const docSnap = querySnapshot.docs[0];
-        const data = docSnap.data();
-        
-        const coverImage = PlaceHolderImages.find(p => p.id === data.coverMediaId);
+        return mapDocToProject(docSnap);
 
-        return {
-            id: docSnap.id,
-            name: data.name,
-            slug: data.slug,
-            category: data.category,
-            categorySlug: data.categorySlug,
-            summary: data.summary,
-            content: data.content,
-            location: data.location,
-            isPublished: data.isPublished,
-            publishedAt: data.publishedAt?.toDate?.().toISOString(),
-            completedAt: data.completedAt?.toDate?.().toISOString(),
-            createdAt: data.createdAt.toDate().toISOString(),
-            coverMediaId: data.coverMediaId,
-            media: data.media || [],
-            image: coverImage || null,
-        };
     } catch (error: any) {
         console.error(`[ProjectApiService] Error fetching project by slug ${slug} (server SDK):`, error);
         // Re-throwing the error to be handled by the caller (e.g., in a try/catch block or an error boundary)

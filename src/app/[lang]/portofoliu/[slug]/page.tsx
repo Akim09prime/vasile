@@ -37,6 +37,11 @@ async function getProject(slug: string): Promise<Project | null> {
                 return fullImage ? { ...item, ...fullImage } : item;
             });
         }
+        // Date conversion
+        projectData.completedAt = data.completedAt?.toDate?.().toISOString() || null;
+        projectData.publishedAt = data.publishedAt?.toDate?.().toISOString() || null;
+        projectData.createdAt = data.createdAt?.toDate?.().toISOString() || null;
+
         return projectData;
     }
 
@@ -59,6 +64,11 @@ async function getProject(slug: string): Promise<Project | null> {
             return fullImage ? { ...item, ...fullImage } : item;
         });
     }
+    
+    // Date conversion
+    projectData.completedAt = data.completedAt?.toDate?.().toISOString() || null;
+    projectData.publishedAt = data.publishedAt?.toDate?.().toISOString() || null;
+    projectData.createdAt = data.createdAt?.toDate?.().toISOString() || null;
 
     return projectData;
 }

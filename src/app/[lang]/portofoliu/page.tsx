@@ -1,4 +1,3 @@
-
 import { PageHeader } from '@/components/layout/page-header';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
@@ -47,4 +46,3 @@ export default async function PortfolioPage({ params }: { params: { lang: Locale
         </>
     );
 }
-

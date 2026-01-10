@@ -10,20 +10,23 @@ import { PlaceHolderImages } from '../placeholder-images';
 /**
  * Maps a full Project object to a ProjectSummary object.
  */
-function mapProjectToSummary(projectDoc: Project): ProjectSummary {
-    const coverImage = PlaceHolderImages.find(p => p.id === projectDoc.coverMediaId);
+function mapProjectToSummary(projectDoc: any): ProjectSummary {
+    const data = projectDoc.data();
+    const coverImage = PlaceHolderImages.find(p => p.id === data.coverMediaId);
+    
     return {
         id: projectDoc.id,
-        name: projectDoc.name,
-        slug: projectDoc.slug,
-        category: projectDoc.category,
-        categorySlug: projectDoc.categorySlug,
-        summary: projectDoc.summary,
-        location: projectDoc.location,
-        isPublished: projectDoc.isPublished,
-        publishedAt: projectDoc.publishedAt,
-        completedAt: projectDoc.completedAt,
-        createdAt: projectDoc.createdAt,
+        name: data.name,
+        slug: data.slug,
+        category: data.category,
+        categorySlug: data.categorySlug,
+        summary: data.summary,
+        location: data.location,
+        isPublished: data.isPublished,
+        // Safely convert timestamps to ISO strings
+        publishedAt: data.publishedAt?.toDate?.().toISOString() || null,
+        completedAt: data.completedAt?.toDate?.().toISOString() || null,
+        createdAt: data.createdAt?.toDate?.().toISOString() || null,
         image: coverImage || null,
     };
 }
@@ -31,7 +34,7 @@ function mapProjectToSummary(projectDoc: Project): ProjectSummary {
 /**
  * Sorts an array of projects by completion date, with fallbacks.
  */
-function sortProjectsByDate(projects: (ProjectSummary | Project)[]): any[] {
+function sortProjectsByDate(projects: (ProjectSummary | Project | GalleryImage)[]): any[] {
     return projects.sort((a, b) => {
         const dateA = new Date(a.completedAt || a.publishedAt || a.createdAt || 0).getTime();
         const dateB = new Date(b.completedAt || b.publishedAt || b.createdAt || 0).getTime();
@@ -61,7 +64,7 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
 
         if (!snapshot.empty) {
             console.log(`[getPublicProjects] Source: project_summaries. Found ${snapshot.size} documents.`);
-            const projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectSummary));
+            const projects = snapshot.docs.map(mapProjectToSummary);
             return sortProjectsByDate(projects);
         }
         console.log("[getPublicProjects] project_summaries is empty. Proceeding to fallback.");
@@ -86,27 +89,7 @@ export async function getPublicProjects(): Promise<ProjectSummary[]> {
         }
 
         console.log(`[getPublicProjects] Source: projects_fallback. Found ${snapshot.size} documents.`);
-        const projects = snapshot.docs.map(doc => {
-            const data = doc.data();
-            const project: Project = {
-                id: doc.id,
-                name: data.name,
-                slug: data.slug,
-                category: data.category,
-                categorySlug: data.categorySlug,
-                summary: data.summary,
-                content: data.content,
-                location: data.location,
-                isPublished: data.isPublished,
-                publishedAt: data.publishedAt?.toDate?.().toISOString(),
-                completedAt: data.completedAt?.toDate?.().toISOString(),
-                createdAt: data.createdAt?.toDate?.().toISOString(),
-                coverMediaId: data.coverMediaId,
-                media: data.media || [],
-            };
-            return mapProjectToSummary(project);
-        });
-
+        const projects = snapshot.docs.map(mapProjectToSummary);
         return sortProjectsByDate(projects);
 
     } catch (error: any) {
@@ -175,15 +158,20 @@ export async function getGalleryImages(): Promise<GalleryImage[]> {
             if (projectData.media && Array.isArray(projectData.media)) {
                 projectData.media.forEach(image => {
                     if (image.isTop) {
-                        allGalleryImages.push({
-                            id: `${doc.id}-${image.id}`,
-                            projectId: doc.id,
-                            projectSlug: projectData.slug,
-                            projectName: projectData.name,
-                            category: projectData.category,
-                            image: image,
-                            publishedAt: projectData.publishedAt,
-                        });
+                        const fullImage = PlaceHolderImages.find(p_img => p_img.id === (image as any).id);
+                        if (fullImage) {
+                            allGalleryImages.push({
+                                id: `${doc.id}-${image.id}`,
+                                projectId: doc.id,
+                                projectSlug: projectData.slug,
+                                projectName: projectData.name,
+                                category: projectData.category,
+                                image: fullImage,
+                                publishedAt: projectData.publishedAt,
+                                createdAt: projectData.createdAt,
+                                completedAt: projectData.completedAt,
+                            });
+                        }
                     }
                 });
             }

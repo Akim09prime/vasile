@@ -1,48 +1,44 @@
-import 'server-only';
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin.server';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import type { Project, ImagePlaceholder } from '@/lib/types';
-import { Timestamp } from 'firebase-admin/firestore';
+import type { Project, ImagePlaceholder } from "@/lib/types";
 
-async function getProjectBySlugOrId(slug: string): Promise<Project | null> {
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+async function getProjectBySlugOrId(slugOrId: string): Promise<Project | null> {
     const { db } = getAdminDb();
     if (!db) {
-        throw new Error("Admin DB not initialized.");
+        console.error("[ProjectAPI] Admin DB not initialized.");
+        return null;
     }
     
     const projectsRef = db.collection('projects');
-    const snapshotBySlug = await projectsRef.where('slug', '==', slug).where('isPublished', '==', true).limit(1).get();
+    // First, try to query by slug
+    let snapshot = await projectsRef.where('slug', '==', slugOrId).limit(1).get();
 
-    let docSnap;
-    if (!snapshotBySlug.empty) {
-        docSnap = snapshotBySlug.docs[0];
-    } else {
-        const docById = await projectsRef.doc(slug).get();
-        if (docById.exists && docById.data()?.isPublished) {
-            docSnap = docById;
-        } else {
-            return null;
+    // If no result, try to get by document ID as a fallback
+    if (snapshot.empty) {
+        const docById = await projectsRef.doc(slugOrId).get();
+        if (docById.exists) {
+            // Create a temporary snapshot-like structure
+            snapshot = { docs: [docById] } as any;
         }
     }
-    
-    if (!docSnap || !docSnap.exists) {
+
+    if (snapshot.empty || !snapshot.docs[0]) {
         return null;
     }
 
-    const data = docSnap.data();
-    if (!data) return null;
+    const doc = snapshot.docs[0];
+    const data = doc.data();
 
-    const toISOString = (timestamp: Timestamp | Date | string | undefined): string | undefined => {
-        if (!timestamp) return undefined;
-        if (timestamp instanceof Timestamp) return timestamp.toDate().toISOString();
-        if (timestamp instanceof Date) return timestamp.toISOString();
-        if (typeof timestamp === 'string') return new Date(timestamp).toISOString();
-        return undefined;
-    };
+    if (!data || !data.isPublished) {
+        return null;
+    }
     
-    const projectData: Project = {
-        id: docSnap.id,
+    const projectData: Project = { 
+        id: doc.id,
         name: data.name,
         slug: data.slug,
         category: data.category,
@@ -51,39 +47,43 @@ async function getProjectBySlugOrId(slug: string): Promise<Project | null> {
         content: data.content,
         location: data.location,
         isPublished: data.isPublished,
-        publishedAt: toISOString(data.publishedAt),
-        completedAt: toISOString(data.completedAt),
-        createdAt: toISOString(data.createdAt) || new Date().toISOString(),
+        // Safely convert Timestamps to ISO strings
+        publishedAt: data.publishedAt?.toDate?.().toISOString() || null,
+        completedAt: data.completedAt?.toDate?.().toISOString() || null,
+        createdAt: data.createdAt?.toDate?.().toISOString() || null,
         coverMediaId: data.coverMediaId,
-        media: (data.media || []).map((item: any) => {
-            const fullImage = PlaceHolderImages.find(p_img => p_img.id === (item.id || item));
-            return fullImage ? { ...item, ...fullImage } : item;
-        }).filter((m: any) => m.imageUrl),
-        image: PlaceHolderImages.find(img => img.id === data.coverMediaId),
+        media: [], // Will be populated below
     };
 
+    // Manually resolve image URLs
+    projectData.image = PlaceHolderImages.find(img => img.id === projectData.coverMediaId) || undefined;
+    if (data.media && Array.isArray(data.media)) {
+        projectData.media = data.media.map((item: any) => {
+            const fullImage = PlaceHolderImages.find(p_img => p_img.id === item.id);
+            return fullImage ? { ...item, ...fullImage } : item;
+        }).filter(Boolean);
+    }
+    
     return projectData;
 }
 
+export async function GET(request: Request, { params }: { params: { slug: string }}) {
+    const { slug } = params;
 
-export async function GET(
-  request: Request,
-  { params }: { params: { slug: string } }
-) {
-  try {
-    const item = await getProjectBySlugOrId(params.slug);
-    
-    if (!item) {
-      return NextResponse.json({ ok: false, error: 'Project not found or not published' }, { status: 404 });
+    if (!slug) {
+        return NextResponse.json({ ok: false, error: 'Project slug is required.' }, { status: 400 });
     }
-    
-    return NextResponse.json({ ok: true, item });
 
-  } catch (error: any) {
-    console.error(`[API/public/portfolio/${params.slug}] GET Error:`, error);
-    return NextResponse.json(
-      { ok: false, error: 'Failed to fetch project details.', details: error.message },
-      { status: 500 }
-    );
-  }
+    try {
+        const project = await getProjectBySlugOrId(slug);
+
+        if (!project) {
+            return NextResponse.json({ ok: false, error: 'Project not found or not published.' }, { status: 404 });
+        }
+        
+        return NextResponse.json({ ok: true, item: project });
+    } catch (error: any) {
+        console.error(`[API/public/portfolio/${slug}] Error:`, error);
+        return NextResponse.json({ ok: false, error: error.message, code: error.code }, { status: 500 });
+    }
 }

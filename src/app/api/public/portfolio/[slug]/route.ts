@@ -1,50 +1,48 @@
-
 import 'server-only';
-
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin.server';
-import type { Project } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import type { Timestamp } from 'firebase-admin/firestore';
+import type { Project, ImagePlaceholder } from '@/lib/types';
+import { Timestamp } from 'firebase-admin/firestore';
 
-function toISO(timestamp: Timestamp | undefined | null): string | null {
-    if (!timestamp) return null;
-    return timestamp.toDate().toISOString();
-}
-
-export async function GET(
-  request: Request,
-  { params }: { params: { slug: string } }
-) {
-  const { slug } = params;
-  if (!slug) {
-    return NextResponse.json({ ok: false, error: "Slug is required" }, { status: 400 });
-  }
-
-  const { db, info: dbInfo } = getAdminDb();
-  if (!db) {
-    return NextResponse.json({ ok: false, error: 'Admin SDK not initialized.' }, { status: 500 });
-  }
-
-  try {
+async function getProjectBySlugOrId(slug: string): Promise<Project | null> {
+    const { db } = getAdminDb();
+    if (!db) {
+        throw new Error("Admin DB not initialized.");
+    }
+    
     const projectsRef = db.collection('projects');
-    const query = projectsRef.where('slug', '==', slug).where('isPublished', '==', true).limit(1);
-    const snapshot = await query.get();
+    const snapshotBySlug = await projectsRef.where('slug', '==', slug).where('isPublished', '==', true).limit(1).get();
 
-    if (snapshot.empty) {
-      // Fallback to check by ID, for older projects without a slug
-      const docById = await projectsRef.doc(slug).get();
-      if (!docById.exists || docById.data()?.isPublished !== true) {
-        return NextResponse.json({ ok: false, error: 'Project not found or not published' }, { status: 404 });
-      }
+    let docSnap;
+    if (!snapshotBySlug.empty) {
+        docSnap = snapshotBySlug.docs[0];
+    } else {
+        const docById = await projectsRef.doc(slug).get();
+        if (docById.exists && docById.data()?.isPublished) {
+            docSnap = docById;
+        } else {
+            return null;
+        }
+    }
+    
+    if (!docSnap || !docSnap.exists) {
+        return null;
+    }
 
-      const data = docById.data();
-      if (!data) {
-        return NextResponse.json({ ok: false, error: 'Project data is missing' }, { status: 404 });
-      }
-      
-      const item: Project = {
-        id: docById.id,
+    const data = docSnap.data();
+    if (!data) return null;
+
+    const toISOString = (timestamp: Timestamp | Date | string | undefined): string | undefined => {
+        if (!timestamp) return undefined;
+        if (timestamp instanceof Timestamp) return timestamp.toDate().toISOString();
+        if (timestamp instanceof Date) return timestamp.toISOString();
+        if (typeof timestamp === 'string') return new Date(timestamp).toISOString();
+        return undefined;
+    };
+    
+    const projectData: Project = {
+        id: docSnap.id,
         name: data.name,
         slug: data.slug,
         category: data.category,
@@ -53,43 +51,39 @@ export async function GET(
         content: data.content,
         location: data.location,
         isPublished: data.isPublished,
-        publishedAt: toISO(data.publishedAt as Timestamp) || undefined,
-        completedAt: toISO(data.completedAt as Timestamp) || undefined,
-        createdAt: toISO(data.createdAt as Timestamp) || new Date().toISOString(),
+        publishedAt: toISOString(data.publishedAt),
+        completedAt: toISOString(data.completedAt),
+        createdAt: toISOString(data.createdAt) || new Date().toISOString(),
         coverMediaId: data.coverMediaId,
-        media: data.media.map((m: any) => PlaceHolderImages.find(p => p.id === m.id) || m),
-        image: PlaceHolderImages.find(p => p.id === data.coverMediaId),
-      };
+        media: (data.media || []).map((item: any) => {
+            const fullImage = PlaceHolderImages.find(p_img => p_img.id === (item.id || item));
+            return fullImage ? { ...item, ...fullImage } : item;
+        }).filter((m: any) => m.imageUrl),
+        image: PlaceHolderImages.find(img => img.id === data.coverMediaId),
+    };
 
-      return NextResponse.json({ ok: true, item });
+    return projectData;
+}
 
-    } else {
-        const doc = snapshot.docs[0];
-        const data = doc.data();
 
-        const item: Project = {
-            id: doc.id,
-            name: data.name,
-            slug: data.slug,
-            category: data.category,
-            categorySlug: data.categorySlug,
-            summary: data.summary,
-            content: data.content,
-            location: data.location,
-            isPublished: data.isPublished,
-            publishedAt: toISO(data.publishedAt as Timestamp) || undefined,
-            completedAt: toISO(data.completedAt as Timestamp) || undefined,
-            createdAt: toISO(data.createdAt as Timestamp) || new Date().toISOString(),
-            coverMediaId: data.coverMediaId,
-            media: (data.media || []).map((m: any) => PlaceHolderImages.find(p => p.id === m.id) || m),
-            image: PlaceHolderImages.find(p => p.id === data.coverMediaId),
-        };
-        
-        return NextResponse.json({ ok: true, item });
+export async function GET(
+  request: Request,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    const item = await getProjectBySlugOrId(params.slug);
+    
+    if (!item) {
+      return NextResponse.json({ ok: false, error: 'Project not found or not published' }, { status: 404 });
     }
+    
+    return NextResponse.json({ ok: true, item });
 
-  } catch (e: any) {
-    console.error(`[API/public/portfolio/${slug}] FATAL ERROR:`, e);
-    return NextResponse.json({ ok: false, error: e.message, code: e.code }, { status: 500 });
+  } catch (error: any) {
+    console.error(`[API/public/portfolio/${params.slug}] GET Error:`, error);
+    return NextResponse.json(
+      { ok: false, error: 'Failed to fetch project details.', details: error.message },
+      { status: 500 }
+    );
   }
 }

@@ -1,4 +1,3 @@
-
 import { notFound } from 'next/navigation';
 import { Locale } from "@/lib/i18n-config";
 import Image from "next/image";
@@ -29,7 +28,16 @@ async function getProject(slug: string): Promise<Project | null> {
         const data = docById.data();
         if(!data || !data.isPublished) return null;
         
-        return { id: docById.id, ...data } as Project;
+        const projectData = { id: docById.id, ...data } as Project;
+         // Manually resolve image URLs
+        projectData.image = PlaceHolderImages.find(img => img.id === projectData.coverMediaId);
+        if (projectData.media && Array.isArray(projectData.media)) {
+            projectData.media = projectData.media.map((item: any) => {
+                const fullImage = PlaceHolderImages.find(p_img => p_img.id === item.id);
+                return fullImage ? { ...item, ...fullImage } : item;
+            });
+        }
+        return projectData;
     }
 
     const doc = snapshot.docs[0];
@@ -45,7 +53,9 @@ async function getProject(slug: string): Promise<Project | null> {
     projectData.image = PlaceHolderImages.find(img => img.id === projectData.coverMediaId);
     if (projectData.media && Array.isArray(projectData.media)) {
         projectData.media = projectData.media.map(item => {
-            const fullImage = PlaceHolderImages.find(p_img => p_img.id === item.id);
+            // The items in `media` might be just {id: '...'} from the form
+            // We need to find the full image object from our placeholder data
+            const fullImage = PlaceHolderImages.find(p_img => p_img.id === (item as any).id);
             return fullImage ? { ...item, ...fullImage } : item;
         });
     }

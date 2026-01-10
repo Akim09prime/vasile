@@ -1,11 +1,12 @@
 
-import { getPortfolioPageData } from '@/lib/services/page-service';
 import { PageHeader } from '@/components/layout/page-header';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { Locale } from '@/lib/i18n-config';
 import ProjectTimeline from './project-timeline';
 import { getPublicProjects } from '@/lib/services/project-api-service';
+import { getPortfolioPageData } from '@/lib/services/page-service';
+
 
 export const revalidate = 300; // Revalidate at most every 5 minutes
 
@@ -46,3 +47,4 @@ export default async function PortfolioPage({ params }: { params: { lang: Locale
         </>
     );
 }
+

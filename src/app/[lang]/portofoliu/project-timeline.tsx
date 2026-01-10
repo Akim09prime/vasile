@@ -110,3 +110,4 @@ export default function ProjectTimeline({ projects, lang }: { projects: ProjectS
         </div>
     );
 }
+

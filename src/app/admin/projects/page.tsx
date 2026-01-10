@@ -177,7 +177,7 @@ export default function AdminProjectsPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. The project will be permanently deleted from the database.
+                            This action cannot be undone. This will permanently delete the project and all its associated data.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

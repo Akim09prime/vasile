@@ -2,72 +2,79 @@
 import 'server-only';
 import { NextResponse, type NextRequest } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin.server";
-import { DocumentData } from 'firebase-admin/firestore';
-import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
+import type { DocumentData } from 'firebase-admin/firestore';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import type { ImagePlaceholder } from '@/lib/types';
+
+
+function resolveMedia(docData: DocumentData): DocumentData {
+    const data = { ...docData };
+
+    // Resolve cover image
+    if (data.coverMediaId) {
+        data.image = PlaceHolderImages.find(p => p.id === data.coverMediaId) || null;
+    } else if (data.image && data.image.id) { // If image object is already there but needs full data
+         data.image = PlaceHolderImages.find(p => p.id === data.image.id) || data.image;
+    }
+
+    // Resolve gallery media
+    // The summary might contain full media objects or just IDs. We need to handle both.
+    const mediaIds = data.media?.map((m: any) => m.id || m) || [];
+    
+    if (Array.isArray(mediaIds) && mediaIds.length > 0) {
+        data.media = mediaIds
+            .map((id: string) => PlaceHolderImages.find(p => p.id === id))
+            .filter((p): p is ImagePlaceholder => !!p);
+    } else {
+        data.media = [];
+    }
+
+    return data;
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function findImage(id?: string): ImagePlaceholder | null {
-    if (!id) return null;
-    return PlaceHolderImages.find(p => p.id === id) || null;
-}
-
 export async function GET(request: NextRequest, { params }: { params: { slug: string }}) {
     const { slug } = params;
-    
+
     if (!slug) {
         return NextResponse.json({ ok: false, error: "Project slug is required." }, { status: 400 });
     }
 
     const { db, info } = getAdminDb();
-    if (!db) {
-        return NextResponse.json({ ok: false, error: 'Admin SDK not available.', adminInfo: info }, { status: 500 });
+    if (!db || info.mode === 'none') {
+        return NextResponse.json({ ok: false, error: "Admin SDK not initialized." }, { status: 500 });
     }
 
-    let docSnap: DocumentData | null = null;
-    
     try {
-        // Strategy 1: Attempt to get by doc ID directly (slug might be the ID)
-        const docByIdRef = db.collection('project_summaries').doc(slug);
-        const docByIdSnap = await docByIdRef.get();
-        if (docByIdSnap.exists) {
-            docSnap = docByIdSnap;
-        } else {
-            // Strategy 2: Query by the 'slug' field
-            const queryBySlug = db.collection('project_summaries').where('slug', '==', slug).limit(1);
-            const querySnap = await queryBySlug.get();
-            if (!querySnap.empty) {
-                docSnap = querySnap.docs[0];
+        let docSnap;
+        const summariesRef = db.collection('project_summaries');
+        
+        // 1. Try to get by doc ID first (most efficient)
+        docSnap = await summariesRef.doc(slug).get();
+        
+        // 2. If not found by ID, query by slug field (fallback)
+        if (!docSnap.exists) {
+            const querySnapshot = await summariesRef.where('slug', '==', slug).limit(1).get();
+            if (!querySnapshot.empty) {
+                docSnap = querySnapshot.docs[0];
             }
         }
 
-        if (!docSnap) {
-            return NextResponse.json({ ok: false, error: "not-found" }, { status: 404 });
-        }
-        
-        const data = docSnap.data();
-        if (!data) {
-             return NextResponse.json({ ok: false, error: "not-found" }, { status: 404 });
+        if (!docSnap.exists) {
+            return NextResponse.json({ ok: false, error: "not-found", message: `Project with slug/id '${slug}' not found.` }, { status: 404 });
         }
 
-        // Reconstruct the full project object, resolving media IDs
-        const item = {
-            id: docSnap.id,
-            ...data,
-            // Ensure timestamps are ISO strings, which is what client expects
-            createdAt: data.createdAt?.toDate?.().toISOString() || null,
-            publishedAt: data.publishedAt?.toDate?.().toISOString() || null,
-            completedAt: data.completedAt?.toDate?.().toISOString() || null,
-            // Resolve image objects from IDs
-            image: findImage(data.coverMediaId),
-            media: Array.isArray(data.media) ? data.media.map((m: any) => findImage(m.id)).filter(Boolean) : [],
-        };
+        let item = docSnap.data();
+        if (item) {
+            item.id = docSnap.id; // Ensure ID is part of the returned object
+            item = resolveMedia(item);
+        }
         
         return NextResponse.json({ ok: true, item });
-        
-    } catch (error: any) {
-        console.error(`[API/public/portfolio/${slug}] Error:`, error);
-        return NextResponse.json({ ok: false, error: 'Internal server error', code: error.code }, { status: 500 });
+    } catch (e: any) {
+        console.error(`[API/portfolio/slug] Error fetching project '${slug}':`, e);
+        return NextResponse.json({ ok: false, error: e.message, code: e.code }, { status: 500 });
     }
 }

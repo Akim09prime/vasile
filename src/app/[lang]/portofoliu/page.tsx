@@ -34,7 +34,7 @@ export default async function PortfolioPage({ params }: { params: { lang: Locale
 
             <section className="section-padding container-max">
                 {error ? (
-                    <Alert variant="destructive">
+                    <Alert variant="destructive" className="max-w-2xl mx-auto">
                         <Terminal className="h-4 w-4" />
                         <AlertTitle>Eroare la încărcare</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
@@ -46,4 +46,3 @@ export default async function PortfolioPage({ params }: { params: { lang: Locale
         </>
     );
 }
-

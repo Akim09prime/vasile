@@ -1,86 +1,95 @@
 
 import 'server-only';
-import { NextResponse, type NextRequest } from "next/server";
-import { getAdminDb } from "@/lib/firebase-admin.server";
-import type { ProjectSummary } from "@/lib/types";
+
+import { NextResponse } from 'next/server';
+import { getAdminDb } from '@/lib/firebase-admin.server';
+import type { Project } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import type { Timestamp } from 'firebase-admin/firestore';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
-async function getProject(db: any, slug: string): Promise<any | null> {
-    
-    // Attempt 1: Fetch by doc ID, assuming slug is the ID
-    const docByIdRef = db.collection('project_summaries').doc(slug);
-    const docByIdSnap = await docByIdRef.get();
-    if (docByIdSnap.exists) {
-        console.log(`[API/portfolio/slug] Found project by ID: ${slug}`);
-        return { id: docByIdSnap.id, ...docByIdSnap.data() };
-    }
-
-    // Attempt 2: Query by the 'slug' field
-    const queryBySlugRef = db.collection('project_summaries').where('slug', '==', slug).limit(1);
-    const queryBySlugSnap = await queryBySlugRef.get();
-    if (!queryBySlugSnap.empty) {
-        const doc = queryBySlugSnap.docs[0];
-        console.log(`[API/portfolio/slug] Found project by slug field: ${slug}`);
-        return { id: doc.id, ...doc.data() };
-    }
-
-    console.log(`[API/portfolio/slug] Project not found for slug/ID: ${slug}`);
-    return null;
+function toISO(timestamp: Timestamp | undefined | null): string | null {
+    if (!timestamp) return null;
+    return timestamp.toDate().toISOString();
 }
 
-
 export async function GET(
-    request: NextRequest,
-    { params }: { params: { slug: string } }
+  request: Request,
+  { params }: { params: { slug: string } }
 ) {
-    const { slug } = params;
+  const { slug } = params;
+  if (!slug) {
+    return NextResponse.json({ ok: false, error: "Slug is required" }, { status: 400 });
+  }
 
-    if (!slug) {
-        return NextResponse.json({ ok: false, error: "Project slug is required." }, { status: 400 });
-    }
+  const { db, info: dbInfo } = getAdminDb();
+  if (!db) {
+    return NextResponse.json({ ok: false, error: 'Admin SDK not initialized.' }, { status: 500 });
+  }
 
-    const { db, info } = getAdminDb();
+  try {
+    const projectsRef = db.collection('projects');
+    const query = projectsRef.where('slug', '==', slug).where('isPublished', '==', true).limit(1);
+    const snapshot = await query.get();
 
-    if (!db) {
-        return NextResponse.json({ ok: false, error: 'Admin SDK not initialized.', adminInfo: info }, { status: 500 });
-    }
-    
-    try {
-        const item = await getProject(db, slug);
+    if (snapshot.empty) {
+      // Fallback to check by ID, for older projects without a slug
+      const docById = await projectsRef.doc(slug).get();
+      if (!docById.exists || docById.data()?.isPublished !== true) {
+        return NextResponse.json({ ok: false, error: 'Project not found or not published' }, { status: 404 });
+      }
 
-        if (!item) {
-            return NextResponse.json({ ok: false, error: 'not-found' }, { status: 404 });
-        }
-        
-        // Resolve cover image and media gallery
-        if (item.coverMediaId) {
-            item.image = PlaceHolderImages.find(img => img.id === item.coverMediaId) || null;
-        }
+      const data = docById.data();
+      if (!data) {
+        return NextResponse.json({ ok: false, error: 'Project data is missing' }, { status: 404 });
+      }
+      
+      const item: Project = {
+        id: docById.id,
+        name: data.name,
+        slug: data.slug,
+        category: data.category,
+        categorySlug: data.categorySlug,
+        summary: data.summary,
+        content: data.content,
+        location: data.location,
+        isPublished: data.isPublished,
+        publishedAt: toISO(data.publishedAt as Timestamp) || undefined,
+        completedAt: toISO(data.completedAt as Timestamp) || undefined,
+        createdAt: toISO(data.createdAt as Timestamp) || new Date().toISOString(),
+        coverMediaId: data.coverMediaId,
+        media: data.media.map((m: any) => PlaceHolderImages.find(p => p.id === m.id) || m),
+        image: PlaceHolderImages.find(p => p.id === data.coverMediaId),
+      };
 
-        if (item.media && Array.isArray(item.media) && item.media.length > 0) {
-            // If media contains full objects, use them. If it contains IDs, resolve them.
-             if (typeof item.media[0] === 'string') {
-                 item.media = item.media.map((id: string) => PlaceHolderImages.find(img => img.id === id)).filter(Boolean);
-             }
-        } else {
-             item.media = [];
-        }
+      return NextResponse.json({ ok: true, item });
 
+    } else {
+        const doc = snapshot.docs[0];
+        const data = doc.data();
 
-        // Convert Timestamps to ISO strings for serialization
-        const toISO = (timestamp: any) => timestamp?.toDate?.().toISOString() || null;
-        item.createdAt = toISO(item.createdAt);
-        item.publishedAt = toISO(item.publishedAt);
-        item.completedAt = toISO(item.completedAt);
-        item.updatedAt = toISO(item.updatedAt);
+        const item: Project = {
+            id: doc.id,
+            name: data.name,
+            slug: data.slug,
+            category: data.category,
+            categorySlug: data.categorySlug,
+            summary: data.summary,
+            content: data.content,
+            location: data.location,
+            isPublished: data.isPublished,
+            publishedAt: toISO(data.publishedAt as Timestamp) || undefined,
+            completedAt: toISO(data.completedAt as Timestamp) || undefined,
+            createdAt: toISO(data.createdAt as Timestamp) || new Date().toISOString(),
+            coverMediaId: data.coverMediaId,
+            media: (data.media || []).map((m: any) => PlaceHolderImages.find(p => p.id === m.id) || m),
+            image: PlaceHolderImages.find(p => p.id === data.coverMediaId),
+        };
         
         return NextResponse.json({ ok: true, item });
-
-    } catch (error: any) {
-        console.error(`[API/portfolio/slug] Error fetching project for slug "${slug}":`, error);
-        return NextResponse.json({ ok: false, error: error.message, code: error.code || 'UNKNOWN_ERROR' }, { status: 500 });
     }
+
+  } catch (e: any) {
+    console.error(`[API/public/portfolio/${slug}] FATAL ERROR:`, e);
+    return NextResponse.json({ ok: false, error: e.message, code: e.code }, { status: 500 });
+  }
 }

@@ -17,6 +17,7 @@ function TimelineItem({ project, lang, isLeft }: { project: ProjectSummary; lang
     const ref = React.useRef(null);
     const isInView = useInView(ref, { once: true, amount: 0.3 });
 
+    // Ensure link is generated using the slug. Fallback to ID is safe but slug is preferred.
     const slug = project.slug || project.id;
     const projectUrl = `/${lang}/portofoliu/${slug}`;
     const completionDate = project.completedAt || project.publishedAt;
@@ -110,4 +111,3 @@ export default function ProjectTimeline({ projects, lang }: { projects: ProjectS
         </div>
     );
 }
-

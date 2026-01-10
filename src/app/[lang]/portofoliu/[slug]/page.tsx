@@ -25,7 +25,7 @@ async function getProject(slug: string): Promise<Project | null> {
     }
 }
 
-export async function generateMetadata({ params }: { params: { slug: string }}) {
+export async function generateMetadata({ params }: { params: { slug: string, lang: Locale }}) {
   const project = await getProject(params.slug);
   if (!project) {
     return {

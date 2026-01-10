@@ -20,7 +20,8 @@ function TimelineItem({ project, lang, isLeft }: { project: ProjectSummary; lang
     // Ensure link is generated using the slug. Fallback to ID is safe but slug is preferred.
     const slug = project.slug || project.id;
     const projectUrl = `/${lang}/portofoliu/${slug}`;
-    const completionDate = project.completedAt || project.publishedAt;
+    const rawDate = project.completedAt || project.publishedAt;
+    const completionDate = rawDate && !isNaN(new Date(rawDate).getTime()) ? new Date(rawDate) : null;
 
     const variants = {
         hidden: { opacity: 0, x: isLeft ? -100 : 100 },
@@ -80,7 +81,7 @@ function TimelineItem({ project, lang, isLeft }: { project: ProjectSummary; lang
                             <div className="absolute top-14 left-1/2 -translate-x-1/2 md:left-auto md:right-full md:mr-4 md:translate-x-0 md:top-8 w-max">
                                 <div className="flex items-center gap-2 bg-secondary px-3 py-1 rounded-full text-sm">
                                     <Calendar className="w-4 h-4" />
-                                    <span>{new Date(completionDate).toLocaleDateString('ro-RO', { year: 'numeric', month: 'long' })}</span>
+                                    <span>{completionDate.toLocaleDateString('ro-RO', { year: 'numeric', month: 'long' })}</span>
                                 </div>
                             </div>
                         )}

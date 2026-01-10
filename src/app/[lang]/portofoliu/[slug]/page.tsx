@@ -88,6 +88,7 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
     }
     
     const contentHtml = project.content || `<p>${project.summary}</p>`;
+    const completionDate = project.completedAt ? new Date(project.completedAt) : null;
 
     return (
         <>
@@ -112,7 +113,7 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
                         <div className="flex justify-center flex-wrap gap-4 pt-4">
                             <Badge variant="secondary" className="text-sm flex items-center gap-1.5"><Tag className="w-3.5 h-3.5"/>{project.category}</Badge>
                             {project.location && <Badge variant="secondary" className="text-sm flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5"/>{project.location}</Badge>}
-                            {project.completedAt && <Badge variant="secondary" className="text-sm flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5"/>{new Date(project.completedAt).getFullYear()}</Badge>}
+                            {completionDate && <Badge variant="secondary" className="text-sm flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5"/>{completionDate.getFullYear()}</Badge>}
                         </div>
                     </div>
                 </div>
@@ -139,9 +140,9 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
                                 <p className="font-semibold text-sm">Locație</p>
                                 <p className="text-foreground/80">{project.location}</p>
                             </div>
-                             {project.completedAt && <div>
+                             {completionDate && <div>
                                 <p className="font-semibold text-sm">Dată Finalizare</p>
-                                <p className="text-foreground/80">{new Date(project.completedAt).toLocaleDateString('ro-RO', { year: 'numeric', month: 'long' })}</p>
+                                <p className="text-foreground/80">{completionDate.toLocaleDateString('ro-RO', { year: 'numeric', month: 'long' })}</p>
                             </div>}
                              <div className="pt-4">
                                 <Button className="w-full" asChild>

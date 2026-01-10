@@ -1,24 +1,48 @@
-# Firebase Studio
 
-This is a NextJS starter in Firebase Studio.
+import { getPortfolioPageData } from '@/lib/services/page-service';
+import { PageHeader } from '@/components/layout/page-header';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal } from 'lucide-react';
+import { Locale } from '@/lib/i18n-config';
+import ProjectTimeline from './project-timeline';
+import { getPublicProjects } from '@/lib/services/project-api-service';
 
-To get started, take a look at src/app/page.tsx.
+export const revalidate = 300; // Revalidate at most every 5 minutes
 
-## Environment Variables
+async function loadProjects() {
+    try {
+        const projects = await getPublicProjects();
+        return { projects, error: null };
+    } catch (error: any) {
+        console.error('[PortfolioPage] Failed to load data:', error);
+        return { projects: [], error: error.message || 'A apărut o eroare la încărcarea proiectelor.' };
+    }
+}
 
-This project uses environment variables to configure the Firebase connection.
+export default async function PortfolioPage({ params }: { params: { lang: Locale }}) {
+    const { lang } = params;
+    const { intro } = getPortfolioPageData();
+    const { projects, error } = await loadProjects();
+    
+    return (
+        <>
+            <PageHeader
+                badge={intro.badge}
+                title={intro.title}
+                description={intro.description}
+            />
 
-1.  Create a file named `.env` in the root of the project.
-2.  Add your Firebase configuration keys to this file, prefixed with `NEXT_PUBLIC_`. For example:
-
-    ```
-    NEXT_PUBLIC_FIREBASE_API_KEY=AIza...
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-    # ... and so on for all required Firebase config keys.
-    ```
-
-3.  **Important**: After creating or modifying the `.env` file, you must **restart the development server** for the changes to take effect.
-
-## Local Development
-
-The development server runs on port **9002**. You can access it at `http://localhost:9002`.
+            <section className="section-padding container-max">
+                {error ? (
+                    <Alert variant="destructive">
+                        <Terminal className="h-4 w-4" />
+                        <AlertTitle>Eroare la încărcare</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                ) : (
+                    <ProjectTimeline projects={projects} lang={lang} />
+                )}
+            </section>
+        </>
+    );
+}
